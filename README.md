@@ -1,3 +1,5 @@
+<img src="art/logo.png" alt="Loft: a pigeon courier perched on a loft roof" width="160" />
+
 # Loft
 
 **Send dollars home in one tap.** A pigeon loft is where homing pigeons fly home to, and Loft is where dollars land for family. It moves Agora dollars (AUSD) across borders on Monad. The sender and the person receiving need nothing but a phone: no seed phrase, no gas, no app store, and nobody holds their money for them.
