@@ -8,7 +8,7 @@ import { Me } from "./screens/me.tsx";
 import { Schedule } from "./screens/schedule.tsx";
 import { Send } from "./screens/send.tsx";
 import { Welcome } from "./screens/welcome.tsx";
-import { useHomeward } from "./state.tsx";
+import { useLoft } from "./state.tsx";
 
 export type Route = "/" | "/send" | "/schedule" | "/me" | "/add" | "/c";
 
@@ -29,7 +29,7 @@ function useRoute(): Route {
 
 export function App() {
   const route = useRoute();
-  const { session, vault, busy } = useHomeward();
+  const { session, vault, busy } = useLoft();
 
   let screen;
   if (route === "/c") screen = <Claim />;

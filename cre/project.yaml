@@ -1,4 +1,4 @@
-# Chainlink CRE project for Homeward. RPC URLs accept ${VAR} from .env.
+# Chainlink CRE project for Loft. RPC URLs accept ${VAR} from .env.
 testnet-settings:
   rpcs:
     - chain-name: monad-testnet

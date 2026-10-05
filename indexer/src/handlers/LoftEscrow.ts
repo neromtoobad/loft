@@ -1,4 +1,4 @@
-// Turns HomewardEscrow events into the entities Homeward's Activity screen and
+// Turns LoftEscrow events into the entities Loft's Activity screen and
 // receipts read: payments of every kind, link lifecycles, standing orders with
 // their payout history, and per-day and all-time totals.
 import { type Account, type DailyStats, type EvmOnEventContext, type Payment, type Totals, indexer } from "envio";
@@ -84,7 +84,7 @@ async function recordPayment(
 
 // ------------------------------------------------------------------ sends
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "Sent" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "Sent" }, async ({ event, context }) => {
   await recordPayment(context, event, {
     kind: "DIRECT",
     from_id: event.params.from,
@@ -100,7 +100,7 @@ indexer.onEvent({ contract: "HomewardEscrow", event: "Sent" }, async ({ event, c
 
 // ------------------------------------------------------------------ links
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "LinkCreated" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "LinkCreated" }, async ({ event, context }) => {
   const at = event.block.timestamp;
   const sender = await touch(context, event.params.sender, at);
   context.Account.set(sender);
@@ -120,7 +120,7 @@ indexer.onEvent({ contract: "HomewardEscrow", event: "LinkCreated" }, async ({ e
   context.Totals.set({ ...t, linksCreated: t.linksCreated + 1 });
 });
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "LinkClaimed" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "LinkClaimed" }, async ({ event, context }) => {
   const link = await context.Link.getOrThrow(event.params.claimKey);
   // The sender claiming their own link is how a link is taken back.
   const cancelled = event.params.recipient.toLowerCase() === event.params.sender.toLowerCase();
@@ -147,14 +147,14 @@ indexer.onEvent({ contract: "HomewardEscrow", event: "LinkClaimed" }, async ({ e
   context.Totals.set({ ...t, linksClaimed: t.linksClaimed + 1 });
 });
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "LinkRefunded" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "LinkRefunded" }, async ({ event, context }) => {
   const link = await context.Link.getOrThrow(event.params.claimKey);
   context.Link.set({ ...link, status: "REFUNDED", settledAt: event.block.timestamp, settledTx: event.transaction.hash });
 });
 
 // ----------------------------------------------------------------- orders
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "OrderCreated" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "OrderCreated" }, async ({ event, context }) => {
   const at = event.block.timestamp;
   const p = event.params;
   context.Account.set(await touch(context, p.sender, at));
@@ -181,7 +181,7 @@ indexer.onEvent({ contract: "HomewardEscrow", event: "OrderCreated" }, async ({ 
   context.Totals.set({ ...t, ordersCreated: t.ordersCreated + 1 });
 });
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "Remitted" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "Remitted" }, async ({ event, context }) => {
   const p = event.params;
   const order = await context.Order.getOrThrow(p.orderId.toString());
   context.Order.set({
@@ -205,7 +205,7 @@ indexer.onEvent({ contract: "HomewardEscrow", event: "Remitted" }, async ({ even
   });
 });
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "OrderSkipped" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "OrderSkipped" }, async ({ event, context }) => {
   const order = await context.Order.getOrThrow(event.params.orderId.toString());
   context.Order.set({
     ...order,
@@ -215,7 +215,7 @@ indexer.onEvent({ contract: "HomewardEscrow", event: "OrderSkipped" }, async ({ 
   });
 });
 
-indexer.onEvent({ contract: "HomewardEscrow", event: "OrderClosed" }, async ({ event, context }) => {
+indexer.onEvent({ contract: "LoftEscrow", event: "OrderClosed" }, async ({ event, context }) => {
   const order = await context.Order.getOrThrow(event.params.orderId.toString());
   context.Order.set({ ...order, active: false, budgetLeft: 0n, refunded: event.params.refunded });
 });

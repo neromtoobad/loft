@@ -10,7 +10,7 @@ let log = 0;
 function ev(event: string, params: Record<string, unknown>, timestamp = DAY) {
   log += 1;
   return {
-    contract: "HomewardEscrow" as const,
+    contract: "LoftEscrow" as const,
     event,
     params,
     block: { number: 100 + log, timestamp },
@@ -25,7 +25,7 @@ async function run(events: ReturnType<typeof ev>[]) {
   return indexer;
 }
 
-describe("Homeward indexer", () => {
+describe("Loft indexer", () => {
   it("records a direct send with its note hash, and both sides' totals", async (t) => {
     const indexer = await run([ev("Sent", { from: dimeji, to: mum, amount: usd(5), ref: REF })]);
     const payments = await indexer.Payment.getAll();

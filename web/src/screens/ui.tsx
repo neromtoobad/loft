@@ -8,7 +8,7 @@ export function errorText(e: unknown): string {
   const err = e as { name?: string; code?: string; message?: string };
   if (err?.name === "NotAllowedError" || err?.code === "PASSKEY_OPERATION_FAILED") return "Passkey was cancelled.";
   if (err?.code === "PRF_UNAVAILABLE")
-    return "This device's passkeys can't make Homeward keys yet. Try iCloud Keychain on iOS 18+, Google Password Manager on Android, or 1Password.";
+    return "This device's passkeys can't make Loft keys yet. Try iCloud Keychain on iOS 18+, Google Password Manager on Android, or 1Password.";
   return err?.message ?? "Something went wrong.";
 }
 

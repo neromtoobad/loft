@@ -1,4 +1,4 @@
-// Runs HomewardEscrow against a local fork of Monad testnet and the real AUSD
+// Runs LoftEscrow against a local fork of Monad testnet and the real AUSD
 // contract, so the EIP-3009 flows are checked against Agora's implementation.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -45,7 +45,7 @@ async function authorize(value: bigint, nonce: Hex) {
   return { validBefore, v: Number(v), r, s };
 }
 
-describe("HomewardEscrow on a Monad testnet fork", () => {
+describe("LoftEscrow on a Monad testnet fork", () => {
   before(async () => {
     chainId = await client.getChainId();
     escrow = await deployEscrow(relayer.address, forwarder.address);

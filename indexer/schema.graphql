@@ -1,5 +1,5 @@
-# Everything Homeward's Activity screen and receipts need, derived from
-# HomewardEscrow events. Amounts are AUSD base units (6 decimals); rates are
+# Everything Loft's Activity screen and receipts need, derived from
+# LoftEscrow events. Amounts are AUSD base units (6 decimals); rates are
 # naira per dollar with 6 decimals.
 
 enum PaymentKind {

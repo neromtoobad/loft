@@ -3,7 +3,7 @@ import type { Hex } from "viem";
 import { fromUnits } from "../../../shared/money.ts";
 import { cadence, ngn, usd, when } from "../lib/format.ts";
 import type { Contact } from "../lib/vault.ts";
-import { useHomeward } from "../state.tsx";
+import { useLoft } from "../state.tsx";
 import { CourierSprite, CreatureAvatar } from "../cast.tsx";
 import { Assure, ErrorLine, TopBar, TxLink, errorText } from "./ui.tsx";
 
@@ -22,7 +22,7 @@ function firstDueFor(weekday: number | null) {
 }
 
 export function Schedule() {
-  const { vault, rate, orders, config, session, schedule, cancelOrder, busy } = useHomeward();
+  const { vault, rate, orders, config, session, schedule, cancelOrder, busy } = useLoft();
   const params = useMemo(() => new URLSearchParams(location.search), []);
   const [contact, setContact] = useState<Contact | null>(() => {
     const to = params.get("to")?.toLowerCase();
@@ -129,7 +129,7 @@ export function Schedule() {
               <p className="muted small">
                 Sets aside up to {usd(budget)} now. Anything unused comes back when you stop it.
               </p>
-              <Assure>Held in a Monad contract, not by Homeward. Each payment records that day's naira rate on-chain.</Assure>
+              <Assure>Held in a Monad contract, not by Loft. Each payment records that day's naira rate on-chain.</Assure>
               <ErrorLine error={error} />
               <button className="primary" disabled={!contact || !(n > 0) || Boolean(busy)} onClick={submit}>
                 Start

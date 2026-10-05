@@ -1,6 +1,6 @@
 testnet-settings:
   user-workflow:
-    workflow-name: "homeward-orders-testnet"
+    workflow-name: "loft-orders-testnet"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.testnet.json"
@@ -8,7 +8,7 @@ testnet-settings:
 
 mainnet-settings:
   user-workflow:
-    workflow-name: "homeward-orders"
+    workflow-name: "loft-orders"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.mainnet.json"
@@ -16,7 +16,7 @@ mainnet-settings:
 
 local-settings:
   user-workflow:
-    workflow-name: "homeward-orders-local"
+    workflow-name: "loft-orders-local"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.local.json"

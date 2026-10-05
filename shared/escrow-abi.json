@@ -219,7 +219,7 @@
       },
       {
         "indexed": false,
-        "internalType": "enum HomewardEscrow.Mode",
+        "internalType": "enum LoftEscrow.Mode",
         "name": "mode",
         "type": "uint8"
       }
@@ -531,7 +531,7 @@
         "type": "uint32"
       },
       {
-        "internalType": "enum HomewardEscrow.Mode",
+        "internalType": "enum LoftEscrow.Mode",
         "name": "mode",
         "type": "uint8"
       },
@@ -714,7 +714,7 @@
         "type": "uint32"
       },
       {
-        "internalType": "enum HomewardEscrow.Mode",
+        "internalType": "enum LoftEscrow.Mode",
         "name": "mode",
         "type": "uint8"
       },
@@ -776,7 +776,7 @@
         "type": "uint32"
       },
       {
-        "internalType": "enum HomewardEscrow.Mode",
+        "internalType": "enum LoftEscrow.Mode",
         "name": "mode",
         "type": "uint8"
       }

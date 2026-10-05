@@ -2,12 +2,12 @@ import { useState } from "react";
 import { navigate } from "../app.tsx";
 import { HIDDEN_LIMIT_MS, IDLE_LIMIT_MS, PROMPT_FREE_LIMIT_USD, exportPhrase } from "../lib/keys.ts";
 import { short, usd } from "../lib/format.ts";
-import { useHomeward } from "../state.tsx";
+import { useLoft } from "../state.tsx";
 import { CreaturePicker, isCreature } from "../cast.tsx";
 import { ErrorLine, TopBar, errorText } from "./ui.tsx";
 
 export function Me() {
-  const { vault, session, config, setHandle, setCharacter, lock } = useHomeward();
+  const { vault, session, config, setHandle, setCharacter, lock } = useLoft();
   const [handle, setHandleInput] = useState(vault?.handle ?? "");
   const [phrase, setPhrase] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function Me() {
       </div>
 
       <div className="card">
-        <h3>Your Homeward name</h3>
+        <h3>Your Loft name</h3>
         <p className="muted small">People can send to @name instead of a long address.</p>
         <form
           className="inline"
@@ -58,9 +58,9 @@ export function Me() {
       <div className="card">
         <h3>How your passkey protects you</h3>
         <ul className="policy">
-          <li>Homeward can't move your money. Every payment needs a signature only your passkey can make.</li>
-          <li>Sends up to {usd(PROMPT_FREE_LIMIT_USD)} go through while Homeward is open. Anything larger asks for your passkey again.</li>
-          <li>Homeward locks itself after {IDLE_LIMIT_MS / 60000} minutes idle, or {HIDDEN_LIMIT_MS / 60000} minutes in the background.</li>
+          <li>Loft can't move your money. Every payment needs a signature only your passkey can make.</li>
+          <li>Sends up to {usd(PROMPT_FREE_LIMIT_USD)} go through while Loft is open. Anything larger asks for your passkey again.</li>
+          <li>Loft locks itself after {IDLE_LIMIT_MS / 60000} minutes idle, or {HIDDEN_LIMIT_MS / 60000} minutes in the background.</li>
           <li>Your keys are never stored, not on this phone and not on our servers. Each unlock rebuilds them from your passkey.</li>
           <li>Your contacts and notes are encrypted with a separate key from the same passkey. We can't read them.</li>
         </ul>
@@ -69,7 +69,7 @@ export function Me() {
       <div className="card">
         <h3>Take your money anywhere</h3>
         <p className="muted small">
-          Your Homeward is a standard wallet we never control. If Homeward shut down tomorrow, this phrase would open your money in
+          Your Loft is a standard wallet we never control. If Loft shut down tomorrow, this phrase would open your money in
           MetaMask or any other wallet. Keep it secret.
         </p>
         {phrase ? (
@@ -89,7 +89,7 @@ export function Me() {
           navigate("/");
         }}
       >
-        Lock Homeward
+        Lock Loft
       </button>
       <p className="fineprint center">
         {config?.network === "mainnet" ? "Monad mainnet" : "Monad testnet"} · AUSD by Agora · passkeys by Mera

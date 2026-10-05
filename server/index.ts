@@ -373,6 +373,6 @@ app.get("*", serveStatic({ path: "./web/dist/index.html" }));
 
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port }, () => {
-  console.log(`homeward on :${port} · ${network.name} · relayer ${relayer.address}`);
+  console.log(`loft on :${port} · ${network.name} · relayer ${relayer.address}`);
   console.log(`AUSD ${network.ausd} · escrow ${network.escrow ?? "(not deployed)"} · ${AUSD_DECIMALS} decimals`);
 });

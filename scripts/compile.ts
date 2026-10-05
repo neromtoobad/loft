@@ -31,7 +31,7 @@ for (const file of Object.keys(output.contracts)) {
   for (const [name, c] of Object.entries<any>(output.contracts[file])) {
     if (!c.evm.bytecode.object) continue; // interfaces
     writeFileSync(`out/${name}.json`, JSON.stringify({ abi: c.abi, bytecode: `0x${c.evm.bytecode.object}` }, null, 2));
-    if (name === "HomewardEscrow") writeFileSync("shared/escrow-abi.json", JSON.stringify(c.abi, null, 2));
+    if (name === "LoftEscrow") writeFileSync("shared/escrow-abi.json", JSON.stringify(c.abi, null, 2));
     console.log(`out/${name}.json  ${c.evm.bytecode.object.length / 2} bytes`);
   }
 }

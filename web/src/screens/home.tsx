@@ -8,12 +8,12 @@ import { type Creature, CreatureAvatar, CreatureSprite, type Pose, isCreature } 
 import { Icon } from "../icons.tsx";
 import { buildActivity } from "../lib/activity.ts";
 import { ago, cadence, ngn, usd, when } from "../lib/format.ts";
-import { useHomeward } from "../state.tsx";
+import { useLoft } from "../state.tsx";
 import type { SentItem } from "../lib/vault.ts";
 import { ErrorLine, TxLink, errorText } from "./ui.tsx";
 
 export function Home() {
-  const { vault, balance, rate, orders, config, session, payments, arrivedAt } = useHomeward();
+  const { vault, balance, rate, orders, config, session, payments, arrivedAt } = useLoft();
   // Re-render once the celebration is over.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -46,7 +46,7 @@ export function Home() {
           <span>{greeting}</span>
           <strong>{vault.name || "there"}</strong>
         </div>
-        <span className="wordmark">Homeward</span>
+        <span className="wordmark">Loft</span>
       </header>
 
       <div className="balance-card">
@@ -204,7 +204,7 @@ function moodFor(balance: bigint | null, orders: OrderInfo[], me: string, arrive
 
 /** A link you sent: whether it was received, and a way to re-share or take it back from any device. */
 function LinkDetail({ item }: { item: SentItem }) {
-  const { config, cancelLink, busy } = useHomeward();
+  const { config, cancelLink, busy } = useLoft();
   const secret = item.claimSecret as Hex;
   const [status, setStatus] = useState<"loading" | "waiting" | "received">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -226,7 +226,7 @@ function LinkDetail({ item }: { item: SentItem }) {
         <div className="inline">
           <a
             className="primary small"
-            href={`https://wa.me/?text=${encodeURIComponent(`I sent you ${usd(item.amount)} on Homeward. Tap to receive it: ${url}`)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`I sent you ${usd(item.amount)} on Loft. Tap to receive it: ${url}`)}`}
             target="_blank"
             rel="noreferrer"
           >
@@ -256,7 +256,7 @@ function LinkDetail({ item }: { item: SentItem }) {
 
 /** Plain-language requests, read by Kimi and always confirmed before anything moves. */
 function Ask() {
-  const { vault } = useHomeward();
+  const { vault } = useLoft();
   const [text, setText] = useState("");
   const [intent, setIntent] = useState<ParsedIntent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -302,7 +302,7 @@ function Ask() {
           setIntent(null);
         }}
         placeholder="Try “send mum ₦50k every Friday”"
-        aria-label="Ask Homeward"
+        aria-label="Ask Loft"
       />
       <button className="icon-btn" disabled={thinking || !text.trim()} aria-label="Ask">
         {thinking ? <span className="spinner" /> : "→"}

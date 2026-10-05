@@ -1,7 +1,7 @@
 // Local demo helper: on the fork from scripts/local-chain.ts, lets Chainlink's
 // simulation forwarder report to the escrow and prepays a standing order for
-// Mum that is already due, submitted through the Homeward relay server. Then
-// `cre workflow simulate homeward-orders --target local-settings --broadcast`
+// Mum that is already due, submitted through the Loft relay server. Then
+// `cre workflow simulate loft-orders --target local-settings --broadcast`
 // pays it.
 
 import { createPublicClient, createWalletClient, http, parseAbi, parseSignature } from "viem";
@@ -33,7 +33,7 @@ const res = await fetch("http://localhost:8788/api/relay/order", {
   method: "POST", headers: { "content-type": "application/json" },
   body: JSON.stringify(signed, (_, v) => (typeof v === "bigint" ? v.toString() : v)),
 });
-console.log("order via Homeward relay:", res.status, await res.text());
+console.log("order via Loft relay:", res.status, await res.text());
 console.log("due now:", await pc.readContract({ address: ESCROW, abi: escrowAbi, functionName: "dueOrders", args: [0n, 50n] }));
 const bal = await pc.readContract({ address: "0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC", abi: parseAbi(["function balanceOf(address) view returns (uint256)"]), functionName: "balanceOf", args: [MUM] });
 console.log("Mum balance before:", Number(bal) / 1e6);

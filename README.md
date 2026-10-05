@@ -1,6 +1,6 @@
-# Homeward
+# Loft
 
-**Send dollars home in one tap.** Homeward moves Agora dollars (AUSD) across borders on Monad. The sender and the person receiving need nothing but a phone: no seed phrase, no gas, no app store, and nobody holds their money for them.
+**Send dollars home in one tap.** A pigeon loft is where homing pigeons fly home to, and Loft is where dollars land for family. It moves Agora dollars (AUSD) across borders on Monad. The sender and the person receiving need nothing but a phone: no seed phrase, no gas, no app store, and nobody holds their money for them.
 
 Built for [Monad Metropolis](https://monad.xyz/developers/hackathons/metropolis), Track 02: Consumer Products & Payments.
 
@@ -12,11 +12,11 @@ Sending $50 from London or Houston to a mother in Lagos still means a remittance
 
 ## How it works
 
-**Onboarding is one passkey.** "Create my Homeward" runs a single WebAuthn ceremony. [Mera](https://mera.category.xyz) turns the passkey's PRF output into the account key. Nothing is stored, on the phone or on our server. Every unlock rebuilds the account from the passkey, so clearing the browser or switching phones loses nothing.
+**Onboarding is one passkey.** "Create my Loft" runs a single WebAuthn ceremony. [Mera](https://mera.category.xyz) turns the passkey's PRF output into the account key. Nothing is stored, on the phone or on our server. Every unlock rebuilds the account from the passkey, so clearing the browser or switching phones loses nothing.
 
-**Sending to someone new is a link.** The sender signs once and gets a link to share on WhatsApp. The recipient opens it and sees who sent how much, plus a private note. One tap with her face or fingerprint creates her Homeward and the dollars land. She never needs MON.
+**Sending to someone new is a link.** The sender signs once and gets a link to share on WhatsApp. The recipient opens it and sees who sent how much, plus a private note. One tap with her face or fingerprint creates her Loft and the dollars land. She never needs MON.
 
-**Sending to someone you know is instant.** AUSD supports EIP-3009, so every payment is a signature that our relayer submits. It passes through `HomewardEscrow.send`, which emits a `Sent` event whose `ref` is the hash of the encrypted note, so the recipient can check the note against the chain. The money settles on Monad in under a second.
+**Sending to someone you know is instant.** AUSD supports EIP-3009, so every payment is a signature that our relayer submits. It passes through `LoftEscrow.send`, which emits a `Sent` event whose `ref` is the hash of the encrypted note, so the recipient can check the note against the chain. The money settles on Monad in under a second.
 
 **Standing orders.** "$50 to Mum every Friday", or "keep Mum's balance at $100". The sender prepays and the escrow holds the funds. A Chainlink CRE workflow releases each payment when it's due and writes the naira rate it used on-chain, so every receipt says what the money was worth where it landed.
 
@@ -24,12 +24,12 @@ Sending $50 from London or Houston to a mother in Lagos still means a remittance
 
 ## One passkey, many keys
 
-Homeward's WebAuthn client asks each passkey ceremony for **two independent PRF evaluations**:
+Loft's WebAuthn client asks each passkey ceremony for **two independent PRF evaluations**:
 
 | PRF salt | Becomes | Used for |
 |---|---|---|
-| `homeward.account.v1` | secp256k1 account key (via BIP-39/BIP-32, so it can be exported to any wallet) | Signing transfers and API requests |
-| `homeward.private.v1` | AES-256-GCM vault key and an X25519 inbox key (HKDF-separated) | Encrypting your contacts, sent links and notes; receiving sealed notes from other people |
+| `loft.account.v1` | secp256k1 account key (via BIP-39/BIP-32, so it can be exported to any wallet) | Signing transfers and API requests |
+| `loft.private.v1` | AES-256-GCM vault key and an X25519 inbox key (HKDF-separated) | Encrypting your contacts, sent links and notes; receiving sealed notes from other people |
 
 The two outputs are unrelated. Knowing the wallet key reveals nothing about the vault, and the server stores only ciphertext. Links carry a third secret: a one-off claim key in the URL fragment, which browsers never send to a server. It also encrypts the note inside the link.
 
@@ -42,17 +42,17 @@ The two outputs are unrelated. Knowing the wallet key reveals nothing about the 
 ## Architecture
 
 ```
- phone (PWA)                         Homeward server                 Monad
- ─────────────                       ───────────────                 ─────
+ phone (PWA)                         Loft server                     Monad
+ ─────────────                       ───────────                     ─────
  Mera passkey ──► account key ──► signs EIP-3009 / EIP-191 ──► relayer ──► AUSD (Agora)
              └──► private keys ─► vault ciphertext ────────► SQLite     │
-                                  sealed notes ────────────► SQLite     ├─► HomewardEscrow
+                                  sealed notes ────────────► SQLite     ├─► LoftEscrow
                                                                         │     links: createLink / claim / refund
  Chainlink CRE workflow ── cron ─► read dueOrders ─► FX rate (HTTP, consensus) ─► onReport
                                                                         │     orders: createOrder / onReport / closeOrder
 ```
 
-- `contracts/HomewardEscrow.sol` holds AUSD for claim links and prepaid standing orders. Every deposit uses `receiveWithAuthorization`, and the signed EIP-3009 nonce is derived from the deposit's parameters. The relayer can submit a deposit but cannot change who it's for, when it expires, or how it pays out. A claim is signed by the link's own key and names the recipient, so a front-runner can't redirect it.
+- `contracts/LoftEscrow.sol` holds AUSD for claim links and prepaid standing orders. Every deposit uses `receiveWithAuthorization`, and the signed EIP-3009 nonce is derived from the deposit's parameters. The relayer can submit a deposit but cannot change who it's for, when it expires, or how it pays out. A claim is signed by the link's own key and names the recipient, so a front-runner can't redirect it.
 - `server/` holds the relayer (simulates before sending, pads gas because Monad bills the gas limit), the ciphertext vault store, profiles (handle and inbox public key), the naira rate as a median of public sources, and the Kimi intent parser. It also serves the web app.
 - `web/` is a React PWA: onboarding, send, claim, standing orders and settings.
 - `cre/` is the Chainlink CRE workflow that runs standing orders.
@@ -61,13 +61,13 @@ The two outputs are unrelated. Knowing the wallet key reveals nothing about the 
 
 ## Sponsor integrations
 
-| Sponsor | What Homeward uses it for | Status |
+| Sponsor | What Loft uses it for | Status |
 |---|---|---|
 | **Agora (AUSD)** | The currency. EIP-3009 transfers make every flow gasless; `receiveWithAuthorization` funds the escrow. | Working (fork of testnet) |
 | **Mera** | The entire account layer; the dual-salt client adds a second, non-wallet key family. | Working |
-| **Chainlink CRE** | `cre/homeward-orders`: cron trigger, EVM read of due orders, naira rate from three public sources (median per node, then across the DON, out-of-band values dropped), one report to `onReport` that pays every due order. | Workflow built, unit-tested with the SDK mocks, compiles to WASM; the escrow accepts the production and simulation forwarders |
+| **Chainlink CRE** | `cre/loft-orders`: cron trigger, EVM read of due orders, naira rate from three public sources (median per node, then across the DON, out-of-band values dropped), one report to `onReport` that pays every due order. | Workflow built, unit-tested with the SDK mocks, compiles to WASM; the escrow accepts the production and simulation forwarders |
 | **Kimi** | Natural-language send and schedule requests. | Built, needs an API key |
-| **Envio** | `indexer/`: HyperIndex over every HomewardEscrow event. Payments of each kind, link lifecycles, standing orders with payout history and naira value, per-day and all-time totals. Powers the Activity screen. | Handlers built and tested; hosted deployment pending |
+| **Envio** | `indexer/`: HyperIndex over every LoftEscrow event. Payments of each kind, link lifecycles, standing orders with payout history and naira value, per-day and all-time totals. Powers the Activity screen. | Handlers built and tested; hosted deployment pending |
 | **Aurora Intents** | "Add money" from any chain: USDC from Base, Arbitrum and others arrives as AUSD. | Planned |
 | **Monad** | ~400 ms blocks make a claim feel instant; the P256 precompile and EIP-7702 are live but not needed for this design. | — |
 
@@ -115,7 +115,7 @@ Unaudited software handling real money. Use small amounts.
 
 ## Built with AI
 
-In line with the Metropolis rules (§4.1.4): Homeward was written with **Claude Code** (Anthropic) as a coding assistant, working alongside the author, who directed the product and reviewed the work.
+In line with the Metropolis rules (§4.1.4): Loft was written with **Claude Code** (Anthropic) as a coding assistant, working alongside the author, who directed the product and reviewed the work.
 
 ## License
 

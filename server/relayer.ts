@@ -1,4 +1,4 @@
-// Submits users' signed authorizations so nobody on Homeward ever needs MON.
+// Submits users' signed authorizations so nobody on Loft ever needs MON.
 // Every request is simulated first, so a bad signature costs nothing.
 import {
   type Address,
@@ -43,7 +43,7 @@ export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string
   }
 
   function escrow(): Address {
-    if (!network.escrow) throw new Error(`HomewardEscrow is not deployed on ${network.name}`);
+    if (!network.escrow) throw new Error(`LoftEscrow is not deployed on ${network.name}`);
     return network.escrow;
   }
 

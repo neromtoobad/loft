@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "homeward-cre",
+      "name": "loft-cre",
       "dependencies": {
         "@chainlink/cre-sdk": "^1.22.0",
         "viem": "^2.56.9",

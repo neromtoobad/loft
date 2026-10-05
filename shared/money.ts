@@ -1,4 +1,4 @@
-// Builds the signatures behind every Homeward flow. All of it runs inside the
+// Builds the signatures behind every Loft flow. All of it runs inside the
 // sender's Mera session: nothing here needs gas or a network round trip.
 import {
   type Address,
@@ -48,7 +48,7 @@ async function signReceive(account: LocalAccount, ctx: Ctx, value: bigint, nonce
 
 // ------------------------------------------------------------------- sends
 
-/** Mirrors HomewardEscrow.sendNonce. */
+/** Mirrors LoftEscrow.sendNonce. */
 export function sendNonce(escrow: Address, to: Address, ref: Hex): Hex {
   return keccak256(
     encodeAbiParameters([{ type: "address" }, { type: "string" }, { type: "address" }, { type: "bytes32" }], [escrow, "send", to, ref]),
@@ -56,7 +56,7 @@ export function sendNonce(escrow: Address, to: Address, ref: Hex): Hex {
 }
 
 /**
- * A direct payment through HomewardEscrow.send. `ref` should be the hash of
+ * A direct payment through LoftEscrow.send. `ref` should be the hash of
  * the sealed note, so the recipient can check the note against the chain.
  */
 export async function signSend(account: LocalAccount, ctx: Ctx, to: Address, amount: bigint, ref: Hex = randomNonce()) {
@@ -66,7 +66,7 @@ export async function signSend(account: LocalAccount, ctx: Ctx, to: Address, amo
 
 // ------------------------------------------------------------------- links
 
-/** Mirrors HomewardEscrow.linkNonce. */
+/** Mirrors LoftEscrow.linkNonce. */
 export function linkNonce(escrow: Address, claimKey: Address, expiry: number): Hex {
   return keccak256(
     encodeAbiParameters(
@@ -98,7 +98,7 @@ export async function signClaim(claimAccount: LocalAccount, ctx: Ctx, recipient:
 
 export type OrderMode = 0 | 1; // Fixed, TopUp
 
-/** Mirrors HomewardEscrow.orderNonce. */
+/** Mirrors LoftEscrow.orderNonce. */
 export function orderNonce(
   escrow: Address,
   o: { recipient: Address; amount: bigint; budget: bigint; firstDue: number; period: number; mode: OrderMode; salt: Hex },
@@ -131,7 +131,7 @@ export async function signOrder(
   return { sender: account.address, ...o, salt, ...auth };
 }
 
-/** Mirrors HomewardEscrow.closeDigest. */
+/** Mirrors LoftEscrow.closeDigest. */
 export async function signClose(account: LocalAccount, ctx: Ctx, orderId: bigint) {
   const inner = keccak256(
     encodeAbiParameters(

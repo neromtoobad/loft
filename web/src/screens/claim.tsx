@@ -6,7 +6,7 @@ import { navigate } from "../app.tsx";
 import { type LinkInfo, api } from "../lib/api.ts";
 import { openFromLink } from "../lib/crypto.ts";
 import { ngn, seconds, short, usd } from "../lib/format.ts";
-import { type Settled, useHomeward } from "../state.tsx";
+import { type Settled, useLoft } from "../state.tsx";
 import { type Creature, CourierSprite, CreaturePicker, CreatureSprite, isCreature } from "../cast.tsx";
 import { HouseMark } from "./welcome.tsx";
 import { Assure, ErrorLine, TxLink, errorText } from "./ui.tsx";
@@ -17,7 +17,7 @@ function secretFromHash(): Hex | null {
 }
 
 export function Claim() {
-  const { session, vault, rate, config, create, unlock, claim, busy } = useHomeward();
+  const { session, vault, rate, config, create, unlock, claim, busy } = useLoft();
   const [secret] = useState(secretFromHash);
   const [info, setInfo] = useState<LinkInfo | null>(null);
   const [message, setMessage] = useState<{ from: string; note: string } | null>(null);
@@ -89,13 +89,13 @@ export function Claim() {
         </div>
         <h2 className="display">{usd(dollars)} is yours</h2>
         <p className="lede">
-          It's in your Homeward as real dollars, confirmed on Monad in {seconds(done.ms)}. Keep it as dollars or send it on.
+          It's in your Loft as real dollars, confirmed on Monad in {seconds(done.ms)}. Keep it as dollars or send it on.
         </p>
         <Assure>Only your face or fingerprint can move it.</Assure>
-        <Assure>Nobody can take it back. Not the sender, not Homeward.</Assure>
+        <Assure>Nobody can take it back. Not the sender, not Loft.</Assure>
         <TxLink hash={done.hash} explorer={config?.explorer} />
         <button className="primary" onClick={() => navigate("/")}>
-          See my Homeward
+          See my Loft
         </button>
       </section>
     );
@@ -138,7 +138,7 @@ export function Claim() {
             <p className="lede">This money has already been received.</p>
           ) : session && vault ? (
             <button className="primary big" disabled={Boolean(busy)} onClick={() => receive()}>
-              Receive into my Homeward
+              Receive into my Loft
             </button>
           ) : (
             <form
@@ -163,9 +163,9 @@ export function Claim() {
                 Receive with passkey
               </button>
               <button type="button" className="ghost" disabled={Boolean(busy)} onClick={() => receive(unlock)}>
-                I already have a Homeward
+                I already have a Loft
               </button>
-              <p className="fineprint">One tap with your face or fingerprint makes your Homeward. The money is yours alone, and stays in dollars.</p>
+              <p className="fineprint">One tap with your face or fingerprint makes your Loft. The money is yours alone, and stays in dollars.</p>
             </form>
           )}
         </>

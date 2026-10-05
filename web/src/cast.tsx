@@ -1,4 +1,4 @@
-// The Homeward cast: everyone is a creature, and a pigeon courier carries
+// The Loft cast: everyone is a creature, and a pigeon courier carries
 // every payment. Nothing here is decoration for its own sake. The courier's
 // flight lasts exactly as long as the real payment takes to confirm, and a
 // creature's mood comes from real balances.

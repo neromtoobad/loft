@@ -6,7 +6,7 @@ import { api } from "../lib/api.ts";
 import { ngn, seconds, short, usd } from "../lib/format.ts";
 import { PROMPT_FREE_LIMIT_USD } from "../lib/keys.ts";
 import type { Contact } from "../lib/vault.ts";
-import { useHomeward } from "../state.tsx";
+import { useLoft } from "../state.tsx";
 import { type Creature, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
 import { Icon } from "../icons.tsx";
 import { Assure, ErrorLine, TopBar, TxLink, errorText } from "./ui.tsx";
@@ -14,7 +14,7 @@ import { Assure, ErrorLine, TopBar, TxLink, errorText } from "./ui.tsx";
 type Target = { kind: "contact"; contact: Contact } | { kind: "link"; label: string };
 
 export function Send() {
-  const { vault, rate, balance, config, sendTo, makeLink, resolveRecipient, busy } = useHomeward();
+  const { vault, rate, balance, config, sendTo, makeLink, resolveRecipient, busy } = useLoft();
   const params = useMemo(() => new URLSearchParams(location.search), []);
   const [currency, setCurrency] = useState<"USD" | "NGN">("USD");
   const [amount, setAmount] = useState(params.get("usd") ?? "");
@@ -44,7 +44,7 @@ export function Send() {
       const c = await resolveRecipient(lookup);
       setTarget({ kind: "contact", contact: c });
     } catch (e) {
-      setError(errorText(e).includes("no such handle") ? "No Homeward with that name. Send them a link instead." : errorText(e));
+      setError(errorText(e).includes("no such handle") ? "Nobody on Loft has that name. Send them a link instead." : errorText(e));
     }
   }
 
@@ -159,8 +159,8 @@ export function Send() {
         </div>
         <Assure>
           {target?.kind === "link"
-            ? "Waits in a Monad contract until they tap. Homeward never holds it."
-            : `Goes straight to ${target ? `${recipientName}'s` : "their"} own account. Homeward never holds it.`}
+            ? "Waits in a Monad contract until they tap. Loft never holds it."
+            : `Goes straight to ${target ? `${recipientName}'s` : "their"} own account. Loft never holds it.`}
         </Assure>
       </div>
 
@@ -213,7 +213,7 @@ export function Send() {
         </label>
       )}
 
-      <div className="or">or find someone on Homeward</div>
+      <div className="or">or find someone on Loft</div>
       <div className="inline">
         <input value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="@name or 0x address" aria-label="Find by name or address" />
         <button className="secondary small" disabled={!lookup.trim()} onClick={find}>
@@ -248,9 +248,9 @@ function Done({
   amount: number;
   explorer?: string;
 }) {
-  const { rate } = useHomeward();
+  const { rate } = useLoft();
   const url = done?.url;
-  const message = `I sent you ${usd(amount)} on Homeward. Tap to receive it: ${url}`;
+  const message = `I sent you ${usd(amount)} on Loft. Tap to receive it: ${url}`;
   return (
     <section className="done">
       <Delivery from={from} to={flight.to} toRoof={flight.toRoof} confirmed={Boolean(done)} />
@@ -265,7 +265,7 @@ function Done({
             Your courier is holding {usd(amount)} on their roof. Send them the link and it hands it over when they tap. Only share it with
             them. It flies back to you after 14 days if nobody opens it.
           </p>
-          <Assure>It waits in a Monad contract, not with Homeward. Only this link can open it.</Assure>
+          <Assure>It waits in a Monad contract, not with Loft. Only this link can open it.</Assure>
           <div className="stack">
             <a className="primary" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
               Share on WhatsApp

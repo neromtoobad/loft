@@ -1,7 +1,7 @@
 // One passkey, two unrelated key families.
 //
 // Mera evaluates the passkey's PRF with the ACCOUNT salt; that output becomes
-// the wallet key. Homeward's WebAuthn client asks the same ceremony for a
+// the wallet key. Loft's WebAuthn client asks the same ceremony for a
 // second PRF evaluation with the PRIVATE salt, which becomes the vault key and
 // the inbox key. The two outputs are independent: knowing the wallet key says
 // nothing about the vault, and neither is ever stored.
@@ -22,12 +22,12 @@ import { wordlist } from "@scure/bip39/wordlists/english.js";
 import { type Hex, type LocalAccount, bytesToHex } from "viem";
 
 export const SALTS = {
-  account: sha256(utf8ToBytes("homeward.account.v1")),
-  private: sha256(utf8ToBytes("homeward.private.v1")),
+  account: sha256(utf8ToBytes("loft.account.v1")),
+  private: sha256(utf8ToBytes("loft.private.v1")),
 };
 
-const RP = { id: location.hostname, name: "Homeward" };
-const HINT_KEY = "homeward.passkey";
+const RP = { id: location.hostname, name: "Loft" };
+const HINT_KEY = "loft.passkey";
 
 // ------------------------------------------------------ dual-salt client
 
@@ -119,8 +119,8 @@ export type PrivateKeys = {
 };
 
 async function privateKeysFrom(secondOutput: Uint8Array): Promise<PrivateKeys> {
-  const vaultBytes = hkdf(sha256, secondOutput, undefined, utf8ToBytes("homeward.vault.v1"), 32);
-  const inboxSecret = hkdf(sha256, secondOutput, undefined, utf8ToBytes("homeward.inbox.v1"), 32);
+  const vaultBytes = hkdf(sha256, secondOutput, undefined, utf8ToBytes("loft.vault.v1"), 32);
+  const inboxSecret = hkdf(sha256, secondOutput, undefined, utf8ToBytes("loft.inbox.v1"), 32);
   const vaultKey = await crypto.subtle.importKey("raw", vaultBytes as Uint8Array<ArrayBuffer>, "AES-GCM", false, ["encrypt", "decrypt"]);
   vaultBytes.fill(0);
   return { vaultKey, inboxSecret, inboxPublic: bytesToHex(x25519.getPublicKey(inboxSecret)) };
@@ -186,7 +186,7 @@ export async function createAccount(name: string): Promise<Session> {
 }
 
 /**
- * Unlocks with any Homeward passkey on this device or a nearby phone. With no
+ * Unlocks with any Loft passkey on this device or a nearby phone. With no
  * hint (cleared storage, new device) the platform picker chooses, and the
  * identity rebuilds entirely from the passkey.
  */
@@ -214,7 +214,7 @@ export async function confirmWithPasskey(session: Session): Promise<void> {
   privateKey.fill(0);
   const address = toViemAccount(check).address;
   check.end();
-  if (address !== session.account.address) throw new Error("that passkey belongs to a different Homeward");
+  if (address !== session.account.address) throw new Error("that passkey belongs to a different Loft");
 }
 
 /** The recovery phrase, shown only after a fresh passkey check. */

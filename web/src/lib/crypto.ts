@@ -1,4 +1,4 @@
-// Encryption for the things Homeward stores but must not be able to read:
+// Encryption for the things Loft stores but must not be able to read:
 // the vault (AES-GCM under the passkey's private key family), notes between
 // people (X25519 sealed boxes to the recipient's inbox key), and notes inside
 // claim links (AES-GCM under a key derived from the link's own secret).
@@ -50,7 +50,7 @@ export async function seal(recipientInbox: Hex, plaintext: string): Promise<stri
   const ephemeralPublic = x25519.getPublicKey(ephemeral);
   const recipient = hexToBytes(recipientInbox);
   const shared = x25519.getSharedSecret(ephemeral, recipient);
-  const key = await aesKey(hkdf(sha256, shared, concatBytes([ephemeralPublic, recipient]), utf8ToBytes("homeward.seal.v1"), 32));
+  const key = await aesKey(hkdf(sha256, shared, concatBytes([ephemeralPublic, recipient]), utf8ToBytes("loft.seal.v1"), 32));
   ephemeral.fill(0);
   return `${b64(ephemeralPublic)}.${await encryptWith(key, plaintext)}`;
 }
@@ -60,14 +60,14 @@ export async function open(inboxSecret: Uint8Array, sealed: string): Promise<str
   const ephemeralPublic = unb64(ephemeralB64);
   const shared = x25519.getSharedSecret(inboxSecret, ephemeralPublic);
   const recipient = x25519.getPublicKey(inboxSecret);
-  const key = await aesKey(hkdf(sha256, shared, concatBytes([ephemeralPublic, recipient]), utf8ToBytes("homeward.seal.v1"), 32));
+  const key = await aesKey(hkdf(sha256, shared, concatBytes([ephemeralPublic, recipient]), utf8ToBytes("loft.seal.v1"), 32));
   return decryptWith(key, body);
 }
 
 // ------------------------------------------------------------ link notes
 
 async function linkNoteKey(claimSecret: Hex) {
-  return aesKey(hkdf(sha256, hexToBytes(claimSecret), undefined, utf8ToBytes("homeward.link-note.v1"), 32));
+  return aesKey(hkdf(sha256, hexToBytes(claimSecret), undefined, utf8ToBytes("loft.link-note.v1"), 32));
 }
 
 export async function sealForLink(claimSecret: Hex, plaintext: string) {
@@ -80,7 +80,7 @@ export async function openFromLink(claimSecret: Hex, sealed: string) {
 
 /** Vault ciphertext is bound to its owner's address, so blobs can't be swapped. */
 export function vaultAad(address: string) {
-  return enc.encode(`homeward.vault:${address.toLowerCase()}`);
+  return enc.encode(`loft.vault:${address.toLowerCase()}`);
 }
 
 export { bytesToHex };

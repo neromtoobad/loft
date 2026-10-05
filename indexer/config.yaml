@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
-name: homeward-indexer
-description: Homeward payments on Monad (HomewardEscrow events)
+name: loft-indexer
+description: Loft payments on Monad (LoftEscrow events)
 contracts:
-  - name: HomewardEscrow
+  - name: LoftEscrow
     events:
       - event: "Sent(address indexed from, address indexed to, uint256 amount, bytes32 indexed ref)"
       - event: "LinkCreated(address indexed claimKey, address indexed sender, uint256 amount, uint256 expiry)"
@@ -20,5 +20,5 @@ chains:
   - id: 143
     start_block: 0
     contracts:
-      - name: HomewardEscrow
+      - name: LoftEscrow
         address: "0x0000000000000000000000000000000000000000"

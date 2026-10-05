@@ -7,7 +7,7 @@ export type Store = ReturnType<typeof openStore>;
 
 export function openStore(dir: string) {
   mkdirSync(dir, { recursive: true });
-  const db = new DatabaseSync(`${dir}/homeward.db`);
+  const db = new DatabaseSync(`${dir}/loft.db`);
   db.exec(`
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS vaults (

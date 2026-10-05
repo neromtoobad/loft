@@ -1,10 +1,10 @@
-// Homeward standing orders, orchestrated by Chainlink CRE.
+// Loft standing orders, orchestrated by Chainlink CRE.
 //
 // On a schedule, the DON:
-//   1. reads which prepaid standing orders are due from HomewardEscrow (EVM read),
+//   1. reads which prepaid standing orders are due from LoftEscrow (EVM read),
 //   2. fetches the naira rate from several public sources on every node and
 //      agrees on the median (HTTP + consensus),
-//   3. delivers one signed report to HomewardEscrow.onReport, which pays each
+//   3. delivers one signed report to LoftEscrow.onReport, which pays each
 //      due order and records the agreed rate on the receipt (EVM write).
 //
 // The escrow only pays orders that are actually due, to recipients fixed when
@@ -111,7 +111,7 @@ export const onCron = (runtime: Runtime<Config>): RunResult => {
     .result();
   runtime.log(`agreed rate: ${ngnPerUsd} NGN per USD`);
 
-  // 3. One report pays every due order. Same encoding HomewardEscrow.onReport decodes.
+  // 3. One report pays every due order. Same encoding LoftEscrow.onReport decodes.
   const payload = encodeAbiParameters(
     [{ type: "uint256[]" }, { type: "uint256" }],
     [[...ids], BigInt(Math.round(ngnPerUsd * 1e6))],

@@ -1,4 +1,4 @@
-// The vault is everything personal about a Homeward: who you send to, the
+// The vault is everything personal about a Loft: who you send to, the
 // links you've made (including their claim keys, so you can re-share or
 // cancel them from another phone), and your own notes. It is encrypted under
 // the passkey's private key family before it leaves the device.

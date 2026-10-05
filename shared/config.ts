@@ -31,7 +31,7 @@ export type Network = {
   name: NetworkName;
   chain: Chain;
   ausd: Address;
-  /** HomewardEscrow, from shared/deployments.json. */
+  /** LoftEscrow, from shared/deployments.json. */
   escrow: Address | undefined;
   /** Block the escrow was deployed in, where indexers start. */
   escrowBlock: number | undefined;

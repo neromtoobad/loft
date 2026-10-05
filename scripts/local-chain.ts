@@ -1,5 +1,5 @@
 // A local Monad testnet fork for end-to-end runs of the app: real AUSD, a
-// fresh HomewardEscrow, a funded relayer, and a faucet for test dollars.
+// fresh LoftEscrow, a funded relayer, and a faucet for test dollars.
 //
 //   npx tsx scripts/local-chain.ts            # RPC on :8545, faucet on :8546
 //   ESCROW_ADDRESS=<printed> NETWORK=testnet RPC_URL=http://localhost:8545 npx tsx server/index.ts

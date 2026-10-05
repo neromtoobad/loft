@@ -1,10 +1,10 @@
 {
-  "name": "homeward-cre",
+  "name": "loft-cre",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "bun test",
-    "compile": "bun x cre-compile homeward-orders/main.ts homeward-orders/dist/workflow.wasm"
+    "compile": "bun x cre-compile loft-orders/main.ts loft-orders/dist/workflow.wasm"
   },
   "dependencies": {
     "@chainlink/cre-sdk": "^1.22.0",

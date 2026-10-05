@@ -8,7 +8,7 @@ export const AUSD: Address = "0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC";
 // Perpl's testnet exchange holds most testnet AUSD; the fork borrows from it.
 export const WHALE: Address = "0x1964C32f0bE608E7D29302AFF5E61268E72080cc";
 
-export const escrowArtifact = JSON.parse(readFileSync("out/HomewardEscrow.json", "utf8"));
+export const escrowArtifact = JSON.parse(readFileSync("out/LoftEscrow.json", "utf8"));
 export const escrowAbi = escrowArtifact.abi;
 export const ausdAbi = parseAbi([
   "function balanceOf(address) view returns (uint256)",
@@ -67,7 +67,7 @@ export async function warp(seconds: bigint) {
 }
 
 
-/** Deploys a fresh HomewardEscrow that trusts `forwarder` for CRE reports. */
+/** Deploys a fresh LoftEscrow that trusts `forwarder` for CRE reports. */
 export async function deployEscrow(from: Address, forwarder: Address): Promise<Address> {
   const deployed = await client.tevmDeploy({
     from,

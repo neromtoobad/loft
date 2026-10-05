@@ -41,7 +41,7 @@ function mockDue(ids: bigint[]) {
   return { evm, writes };
 }
 
-describe("homeward standing orders workflow", () => {
+describe("loft standing orders workflow", () => {
   test("does nothing when no order is due", () => {
     mockRates({ er: 1329 });
     const { writes } = mockDue([]);
@@ -63,7 +63,7 @@ describe("homeward standing orders workflow", () => {
     expect(result.ngnPerUsd).toBeCloseTo((1329.26 + 1331.5) / 2, 6);
     expect(writes).toHaveLength(1);
 
-    // The report carries exactly what HomewardEscrow.onReport decodes.
+    // The report carries exactly what LoftEscrow.onReport decodes.
     const expected = encodeAbiParameters(
       [{ type: "uint256[]" }, { type: "uint256" }],
       [[0n, 3n], BigInt(Math.round(((1329.26 + 1331.5) / 2) * 1e6))],

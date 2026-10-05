@@ -67,15 +67,15 @@ type Actions = {
 /** A confirmed transaction and how long it took from tap to confirmation. */
 export type Settled = { hash: Hex; ms: number };
 
-const HomewardContext = createContext<(State & Actions) | null>(null);
+const LoftContext = createContext<(State & Actions) | null>(null);
 
-export function useHomeward() {
-  const ctx = useContext(HomewardContext);
-  if (!ctx) throw new Error("useHomeward outside provider");
+export function useLoft() {
+  const ctx = useContext(LoftContext);
+  if (!ctx) throw new Error("useLoft outside provider");
   return ctx;
 }
 
-export function HomewardProvider({ children }: { children: ReactNode }) {
+export function LoftProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -97,7 +97,7 @@ export function HomewardProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const ctx = useCallback((): Ctx => {
-    if (!config?.escrow) throw new Error("Homeward isn't deployed on this network yet");
+    if (!config?.escrow) throw new Error("Loft isn't deployed on this network yet");
     return { chainId: config.chainId, ausd: config.ausd, escrow: config.escrow };
   }, [config]);
 
@@ -239,7 +239,7 @@ export function HomewardProvider({ children }: { children: ReactNode }) {
 
   const doCreate = useCallback(
     (name: string, character: Creature) =>
-      withBusy("Creating your Homeward", async () => {
+      withBusy("Creating your Loft", async () => {
         const s = await createAccount(name);
         setSession(s);
         await hydrate(s, name, character);
@@ -499,7 +499,7 @@ export function HomewardProvider({ children }: { children: ReactNode }) {
     setCharacter,
     resolveRecipient,
   };
-  return <HomewardContext.Provider value={value}>{children}</HomewardContext.Provider>;
+  return <LoftContext.Provider value={value}>{children}</LoftContext.Provider>;
 }
 
 export type { Address };

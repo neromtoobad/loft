@@ -1,11 +1,11 @@
 import qrcode from "qrcode-generator";
 import { useMemo, useState } from "react";
-import { useHomeward } from "../state.tsx";
+import { useLoft } from "../state.tsx";
 import { TopBar } from "./ui.tsx";
 
-/** Your Homeward address as a QR code, for topping up from a wallet or exchange on Monad. */
+/** Your Loft address as a QR code, for topping up from a wallet or exchange on Monad. */
 export function Add() {
-  const { session, config } = useHomeward();
+  const { session, config } = useLoft();
   const [copied, setCopied] = useState(false);
   const address = session?.account.address ?? "";
 
@@ -23,7 +23,7 @@ export function Add() {
       <p className="lede">
         Send Agora dollars (AUSD) on Monad to this address from any wallet or exchange. They show up here in about a second.
       </p>
-      <div className="qr" aria-label="QR code of your Homeward address" dangerouslySetInnerHTML={{ __html: svg }} />
+      <div className="qr" aria-label="QR code of your Loft address" dangerouslySetInnerHTML={{ __html: svg }} />
       <p className="mono address">{address}</p>
       <button
         className="primary big"

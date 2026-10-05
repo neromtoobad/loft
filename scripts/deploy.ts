@@ -1,4 +1,4 @@
-// Deploys HomewardEscrow with the relayer key and records it in
+// Deploys LoftEscrow with the relayer key and records it in
 // shared/deployments.json. Both Chainlink CRE forwarders become reporters: the
 // KeystoneForwarder for the deployed workflow, and the simulation forwarder so
 // `cre workflow simulate --broadcast` pays real orders in a demo.
@@ -15,7 +15,7 @@ const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
 const transport = http(process.env.RPC_URL);
 const pc = createPublicClient({ chain: network.chain, transport });
 const wc = createWalletClient({ account, chain: network.chain, transport });
-const { bytecode } = JSON.parse(readFileSync("out/HomewardEscrow.json", "utf8"));
+const { bytecode } = JSON.parse(readFileSync("out/LoftEscrow.json", "utf8"));
 
 const balance = await pc.getBalance({ address: account.address });
 console.log(`${network.name}: deploying from ${account.address} (${formatEther(balance)} MON)`);
@@ -25,7 +25,7 @@ const hash = await wc.deployContract({ abi: escrowAbi, bytecode, args: [network.
 const receipt = await pc.waitForTransactionReceipt({ hash });
 const escrow = receipt.contractAddress;
 if (!escrow || receipt.status !== "success") throw new Error(`deploy failed: ${hash}`);
-console.log(`HomewardEscrow ${escrow} (block ${receipt.blockNumber}, tx ${hash})`);
+console.log(`LoftEscrow ${escrow} (block ${receipt.blockNumber}, tx ${hash})`);
 
 const set = await wc.writeContract({
   address: escrow,
@@ -54,7 +54,7 @@ if (network.name === "mainnet") {
       .replace(/start_block: \d+/, `start_block: ${receipt.blockNumber}`)
       .replace(/address: "0x[0-9a-fA-F]{40}"/, `address: "${escrow}"`),
   );
-  const cre = "cre/homeward-orders/config.mainnet.json";
+  const cre = "cre/loft-orders/config.mainnet.json";
   const creConfig = JSON.parse(readFileSync(cre, "utf8"));
   writeFileSync(cre, `${JSON.stringify({ ...creConfig, escrowAddress: escrow }, null, 2)}\n`);
   console.log(`updated ${indexer} and ${cre}`);

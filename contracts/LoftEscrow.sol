@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 /// Agora's AUSD implements EIP-3009 and ERC-2612, which is what lets every
-/// Homeward flow be gasless for the people sending and receiving money.
+/// Loft flow be gasless for the people sending and receiving money.
 interface IAUSD {
     function receiveWithAuthorization(
         address from,
@@ -21,7 +21,7 @@ interface IAUSD {
     function balanceOf(address account) external view returns (uint256);
 }
 
-/// @title HomewardEscrow
+/// @title LoftEscrow
 /// @notice Holds AUSD for two things a remittance needs that a plain transfer
 /// can't do: claim links for people who don't have an account yet, and
 /// prepaid standing orders that Chainlink CRE releases on schedule.
@@ -30,7 +30,7 @@ interface IAUSD {
 /// nonce the sender signs is derived from the deposit's parameters. A relayer
 /// can therefore submit the deposit but cannot change who it is for, when it
 /// expires, or how it is paid out.
-contract HomewardEscrow {
+contract LoftEscrow {
     IAUSD public immutable ausd;
     address public immutable owner;
 
@@ -136,7 +136,7 @@ contract HomewardEscrow {
     }
 
     /// Pays `to` straight away. It passes through the escrow only so the
-    /// payment is recognisably a Homeward one onchain.
+    /// payment is recognisably a Loft one onchain.
     function send(
         address from,
         address to,

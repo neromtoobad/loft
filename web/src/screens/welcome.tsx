@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { CREATURES, type Creature, CourierSprite, CreaturePicker, CreatureSprite } from "../cast.tsx";
-import { useHomeward } from "../state.tsx";
+import { useLoft } from "../state.tsx";
 import { ErrorLine, errorText } from "./ui.tsx";
 
 export function Welcome({ returning }: { returning: boolean }) {
-  const { create, unlock, busy } = useHomeward();
+  const { create, unlock, busy } = useLoft();
   const [name, setName] = useState("");
   const [creature, setCreature] = useState<Creature | null>(null);
   const [mode, setMode] = useState<"start" | "create">("start");
@@ -72,7 +72,7 @@ export function Welcome({ returning }: { returning: boolean }) {
       ) : (
         <div className="stack">
           <button className="primary" onClick={() => setMode("create")} disabled={Boolean(busy)}>
-            Create my Homeward
+            Create my Loft
           </button>
           <button className="secondary" onClick={() => run(unlock)} disabled={Boolean(busy)}>
             {returning ? "Unlock" : "I already have one"}
@@ -82,7 +82,7 @@ export function Welcome({ returning }: { returning: boolean }) {
       <ErrorLine error={error} />
       {mode === "start" && <Compare />}
       <p className="fineprint">
-        Homeward sends Agora dollars (AUSD) on Monad. Your passkey stays on your phone, and we never hold your money.
+        Loft sends Agora dollars (AUSD) on Monad. Your passkey stays on your phone, and we never hold your money.
       </p>
     </section>
   );
@@ -98,12 +98,12 @@ const DIFFERENCES = [
 
 function Compare() {
   return (
-    <div className="compare" role="table" aria-label="How Homeward is different">
+    <div className="compare" role="table" aria-label="How Loft is different">
       <h3>How it's different</h3>
       <div className="compare-row head" role="row">
         <span role="columnheader" />
         <span role="columnheader">Most money apps</span>
-        <span role="columnheader">Homeward</span>
+        <span role="columnheader">Loft</span>
       </div>
       {DIFFERENCES.map(([what, them, us]) => (
         <div className="compare-row" role="row" key={what}>
