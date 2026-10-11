@@ -18,7 +18,7 @@ field_selection:
 chains:
   # Monad mainnet. scripts/deploy.ts fills in the escrow address and start block.
   - id: 143
-    start_block: 0
+    start_block: 112465375
     contracts:
       - name: LoftEscrow
-        address: "0x0000000000000000000000000000000000000000"
+        address: "0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90"

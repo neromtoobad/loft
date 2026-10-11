@@ -2,13 +2,22 @@
   "schedule": "0 0 * * * *",
   "chainSelectorName": "monad-mainnet",
   "isTestnet": false,
-  "escrowAddress": "0x0000000000000000000000000000000000000000",
+  "escrowAddress": "0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90",
   "gasLimit": "600000",
   "maxOrders": 50,
   "rateSources": [
-    { "url": "https://open.er-api.com/v6/latest/USD", "path": "rates.NGN" },
-    { "url": "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json", "path": "usd.ngn" },
-    { "url": "https://latest.currency-api.pages.dev/v1/currencies/usd.json", "path": "usd.ngn" }
+    {
+      "url": "https://open.er-api.com/v6/latest/USD",
+      "path": "rates.NGN"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json",
+      "path": "usd.ngn"
+    },
+    {
+      "url": "https://latest.currency-api.pages.dev/v1/currencies/usd.json",
+      "path": "usd.ngn"
+    }
   ],
   "minRate": 500,
   "maxRate": 5000
