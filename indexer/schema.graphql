@@ -116,10 +116,21 @@ type PotContribution {
   timestamp: Int!
 }
 
+"Money that arrived from another chain (Aurora Intents USDC, converted to AUSD by LoftConvert)."
+type TopUp {
+  id: ID!
+  owner: Account!
+  usdcIn: BigInt!
+  ausdOut: BigInt!
+  txHash: String!
+  timestamp: Int! @index
+}
+
 "One row per UTC day: volume by kind and the average rate recorded."
 type DailyStats {
   id: ID!
   volume: BigInt!
+  topupVolume: BigInt!
   payments: Int!
   direct: Int!
   links: Int!
@@ -137,4 +148,6 @@ type Totals {
   linksClaimed: Int!
   ordersCreated: Int!
   potsCreated: Int!
+  topups: Int!
+  topupVolume: BigInt!
 }

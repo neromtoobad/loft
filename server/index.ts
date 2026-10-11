@@ -4,10 +4,12 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { type Context, Hono } from "hono";
 import { type Address, type Hex, formatUnits, getAddress, isAddress, isHex, keccak256, toBytes, verifyMessage } from "viem";
 import { AUTH_HEADER, AUTH_WINDOW_MS, authMessage, decodeAuth } from "../shared/auth.ts";
-import { AUSD_DECIMALS, NETWORKS, type NetworkName, ausdAbi, escrowAbi } from "../shared/config.ts";
-import { parseIntent } from "./intent.ts";
+import { AUSD_DECIMALS, NETWORKS, type NetworkName, ausdAbi, escrowAbi, lbPairAbi } from "../shared/config.ts";
+import { parseIntent, ruleIntent } from "./intent.ts";
+import { corridor, followChain } from "./corridor.ts";
 import { ngnPerUsd } from "./rate.ts";
 import { createRelayer } from "./relayer.ts";
+import { SOURCES, quoteTopUp, topUpStatus, topupProvider } from "./topup.ts";
 import { openStore } from "./store.ts";
 
 // Load .env when running locally; Railway injects variables directly.
@@ -17,8 +19,13 @@ const base = NETWORKS[(process.env.NETWORK as NetworkName) ?? "mainnet"];
 if (!base) throw new Error(`unknown NETWORK ${process.env.NETWORK}`);
 // ESCROW_ADDRESS points at a local fork or a fresh deploy without editing deployments.json.
 const network = { ...base, escrow: (process.env.ESCROW_ADDRESS as Address | undefined) ?? base.escrow };
-const relayer = createRelayer(network, process.env.RELAYER_PRIVATE_KEY as Hex, process.env.RPC_URL);
 const store = openStore(process.env.DATA_DIR ?? "./data");
+// Every landed transaction goes in the relay log, for the corridor page's confirmation times.
+const relayer = createRelayer(network, process.env.RELAYER_PRIVATE_KEY as Hex, process.env.RPC_URL, (c) =>
+  store.recordRelay({ txHash: c.hash, fn: c.functionName, ms: c.ms, gasWei: c.gasWei }),
+);
+// Without the Envio indexer, the corridor page reads payments from the chain itself.
+if (!process.env.ENVIO_GRAPHQL_URL && !process.env.ESCROW_ADDRESS) followChain(relayer.publicClient as any, network, store);
 
 const app = new Hono();
 
@@ -102,6 +109,9 @@ app.get("/api/config", async (c) => {
     explorer: network.chain.blockExplorers?.default.url,
     kimi: Boolean(process.env.KIMI_API_KEY),
     indexer: Boolean(process.env.ENVIO_GRAPHQL_URL),
+    usdc: network.usdc ?? null,
+    convert: network.convert ?? null,
+    topup: network.convert ? topupProvider() : null,
   });
 });
 
@@ -115,7 +125,10 @@ app.get("/api/balance/:address", async (c) => {
     functionName: "balanceOf",
     args: [who],
   })) as bigint;
-  return c.json({ ausd: balance.toString() });
+  const usdc = network.usdc
+    ? ((await relayer.publicClient.readContract({ address: network.usdc, abi: ausdAbi, functionName: "balanceOf", args: [who] })) as bigint)
+    : 0n;
+  return c.json({ ausd: balance.toString(), usdc: usdc.toString() });
 });
 
 type OrderRow = [Address, Address, bigint, bigint, number, number, number, bigint];
@@ -366,6 +379,62 @@ app.post("/api/relay/contribute", async (c) => {
   return c.json(result);
 });
 
+// ------------------------------------------------- add money from any chain
+
+app.get("/api/topup/sources", (c) =>
+  c.json({ provider: topupProvider(), sources: SOURCES.map(({ id, chain, symbol, evm }) => ({ id, chain, symbol, evm })) }),
+);
+
+/** Opens a deposit address on the source chain that delivers USDC to the user's Loft address on Monad. */
+app.post("/api/topup/quote", async (c) => {
+  rateLimit(c, 10);
+  const b = await c.req.json();
+  if (!network.convert) throw new HttpError(503, "any-chain top-ups aren't set up on this network");
+  const source = SOURCES.find((s) => s.id === b.source);
+  if (!source) throw new HttpError(400, "unknown source");
+  const amount = Number(b.amount);
+  if (!(amount >= 1 && amount <= 2000)) throw new HttpError(400, "amount must be between $1 and $2,000");
+  const recipient = addr(b.address, "address");
+  // EVM refunds go back to the same address on the source chain, which the passkey controls there too.
+  const refundTo = source.evm ? recipient : typeof b.refundTo === "string" && b.refundTo.trim() ? b.refundTo.trim() : null;
+  if (!refundTo) throw new HttpError(400, `add a ${source.chain} address for refunds`);
+  return c.json(await quoteTopUp({ source, amount, recipient, refundTo, dry: Boolean(b.dry) }));
+});
+
+app.get("/api/topup/status", async (c) => {
+  const depositAddress = c.req.query("depositAddress");
+  if (!depositAddress) throw new HttpError(400, "depositAddress is required");
+  return c.json(await topUpStatus(depositAddress, c.req.query("depositMemo")));
+});
+
+/** What `amount` USDC fetches in AUSD right now, from the Liquidity Book pair. */
+app.get("/api/convert/quote", async (c) => {
+  if (!network.usdcPair) throw new HttpError(503, "no USDC pair on this network");
+  const amount = big(c.req.query("amount"), "amount");
+  const [left, out, fee] = (await relayer.publicClient.readContract({
+    address: network.usdcPair,
+    abi: lbPairAbi,
+    functionName: "getSwapOut",
+    args: [amount, false],
+  })) as [bigint, bigint, bigint];
+  return c.json({ amountIn: amount.toString(), ausdOut: out.toString(), fee: fee.toString(), filled: left === 0n });
+});
+
+app.post("/api/relay/convert", async (c) => {
+  rateLimit(c);
+  const b = await c.req.json();
+  return c.json(
+    await relayer.convert({
+      owner: addr(b.owner, "owner"),
+      amount: big(b.amount, "amount"),
+      minOut: big(b.minOut, "minOut"),
+      salt: hex(b.salt, "salt"),
+      validBefore: big(b.validBefore, "validBefore"),
+      signature: hex(b.signature, "signature"),
+    }),
+  );
+});
+
 // ------------------------------------------------------- ask the family
 
 /** A request is public by design: whoever has the link sees who asks, for what, and how much. */
@@ -437,6 +506,13 @@ app.get("/api/activity/:address", async (c) => {
   return c.json(json.data?.Payment ?? []);
 });
 
+// ----------------------------------------------------------------- corridor
+
+app.get("/api/corridor", async (c) => {
+  const [stats, rate] = await Promise.all([corridor(store), ngnPerUsd().catch(() => null)]);
+  return c.json({ ...stats, ngnPerUsd: rate?.ngnPerUsd ?? null });
+});
+
 // ------------------------------------------------------ profiles and notes
 
 /** The creatures a person can choose (web/public/cast). */
@@ -493,11 +569,20 @@ app.put("/api/vault", async (c) => {
 
 app.post("/api/intent", async (c) => {
   rateLimit(c, 10);
-  if (!process.env.KIMI_API_KEY) throw new HttpError(503, "Kimi is not configured");
   const b = await c.req.json();
   if (typeof b.text !== "string" || b.text.length > 500) throw new HttpError(400, "text required");
   const contacts = Array.isArray(b.contacts) ? b.contacts.filter((x: unknown) => typeof x === "string").slice(0, 50) : [];
-  const intent = await parseIntent(b.text, contacts);
+  // Kimi reads it when configured; the rules cover the common phrasings otherwise, or if Kimi is down.
+  let engine: "kimi" | "rules" = "rules";
+  let intent = ruleIntent(b.text, contacts);
+  if (process.env.KIMI_API_KEY) {
+    try {
+      intent = await parseIntent(b.text, contacts);
+      engine = "kimi";
+    } catch (err) {
+      console.error("kimi:", (err as Error).message);
+    }
+  }
   const rate = await ngnPerUsd().catch(() => undefined);
   const usd =
     intent.amount === null
@@ -507,7 +592,7 @@ app.post("/api/intent", async (c) => {
           ? intent.amount / rate.ngnPerUsd
           : null
         : intent.amount;
-  return c.json({ ...intent, usd, ngnPerUsd: rate?.ngnPerUsd ?? null });
+  return c.json({ ...intent, usd, ngnPerUsd: rate?.ngnPerUsd ?? null, engine });
 });
 
 // -------------------------------------------------------------- web client

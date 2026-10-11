@@ -69,6 +69,28 @@ export function openStore(dir: string) {
       paid_tx TEXT,
       paid_at INTEGER
     );
+    -- Every transaction the relayer lands and how long it took from
+    -- submission to receipt. Public facts, for the corridor page.
+    CREATE TABLE IF NOT EXISTS relays (
+      tx_hash TEXT PRIMARY KEY,
+      fn TEXT NOT NULL,
+      ms INTEGER NOT NULL,
+      gas_wei TEXT NOT NULL,
+      at INTEGER NOT NULL
+    );
+    -- Payments read from the chain when the Envio indexer isn't configured.
+    CREATE TABLE IF NOT EXISTS chain_payments (
+      id TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,
+      amount TEXT NOT NULL,
+      tx_hash TEXT NOT NULL,
+      at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS chain_payments_at ON chain_payments (at);
+    CREATE TABLE IF NOT EXISTS kv (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
   // Columns added after launch.
   for (const sql of [
@@ -235,6 +257,34 @@ export function openStore(dir: string) {
       db.prepare("UPDATE requests SET paid_by = ?, paid_tx = ?, paid_at = ?, paid_name = ? WHERE id = ? AND paid_tx IS NULL").run(
         lower(payer), txHash, Date.now(), name, id,
       );
+    },
+
+    recordRelay(r: { txHash: string; fn: string; ms: number; gasWei: bigint }) {
+      db.prepare("INSERT OR IGNORE INTO relays (tx_hash, fn, ms, gas_wei, at) VALUES (?, ?, ?, ?, ?)").run(
+        r.txHash, r.fn, Math.round(r.ms), r.gasWei.toString(), Date.now(),
+      );
+    },
+
+    relays() {
+      return db.prepare("SELECT * FROM relays ORDER BY at DESC").all() as { tx_hash: string; fn: string; ms: number; gas_wei: string; at: number }[];
+    },
+
+    addChainPayment(p: { id: string; kind: string; amount: bigint; txHash: string; at: number }) {
+      db.prepare("INSERT OR IGNORE INTO chain_payments (id, kind, amount, tx_hash, at) VALUES (?, ?, ?, ?, ?)").run(
+        p.id, p.kind, p.amount.toString(), p.txHash, p.at,
+      );
+    },
+
+    chainPayments() {
+      return db.prepare("SELECT * FROM chain_payments ORDER BY at DESC").all() as { id: string; kind: string; amount: string; tx_hash: string; at: number }[];
+    },
+
+    get(key: string) {
+      return (db.prepare("SELECT value FROM kv WHERE key = ?").get(key) as { value: string } | undefined)?.value ?? null;
+    },
+
+    set(key: string, value: string) {
+      db.prepare("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(key, value);
     },
   };
 }

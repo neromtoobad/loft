@@ -15,6 +15,9 @@ contracts:
       - event: "PotCreated(uint256 indexed potId, address indexed organizer, address indexed beneficiary, uint256 target, uint256 deadline)"
       - event: "PotContributed(uint256 indexed potId, address indexed from, uint256 amount, bytes32 ref)"
       - event: "PotReleased(uint256 indexed potId, address indexed beneficiary, uint256 amount)"
+  - name: LoftConvert
+    events:
+      - event: "Converted(address indexed owner, uint256 usdcIn, uint256 ausdOut, bytes32 salt)"
 field_selection:
   transaction_fields:
     - hash
@@ -25,3 +28,6 @@ chains:
     contracts:
       - name: LoftEscrow
         address: "0xc2da029bd912516c2046fc928829f63749e6d275"
+      # Any-chain top-ups: USDC delivered by Aurora Intents, turned into AUSD.
+      - name: LoftConvert
+        address: "0x0cba9430ae1fc9e4389f9e80a1470e0b178fda34"

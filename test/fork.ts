@@ -15,34 +15,41 @@ export const ausdAbi = parseAbi([
   "function transfer(address,uint256) returns (bool)",
 ]);
 
+/** A tevm client forked from `rpc` (testnet by default; mainnet for the swap tests). */
+export function forkOf(rpc: string) {
+  return createMemoryClient({ fork: { transport: proofless(rpc) as any }, miningConfig: { type: "auto" } });
+}
+
 // Monad's RPC has no eth_getProof, which tevm uses to fetch forked accounts.
 // Nothing here verifies the proofs, so the answer is assembled from plain
 // reads.
-const upstream = http(RPC)({});
-const forkTransport = {
-  ...upstream,
-  async request(args: { method: string; params?: any }) {
-    if (args.method !== "eth_getProof") return upstream.request(args as any);
-    const [address, keys, block] = args.params;
-    const [balance, nonce, code, ...values] = await Promise.all([
-      upstream.request({ method: "eth_getBalance", params: [address, block] }),
-      upstream.request({ method: "eth_getTransactionCount", params: [address, block] }),
-      upstream.request({ method: "eth_getCode", params: [address, block] }),
-      ...keys.map((key: Hex) => upstream.request({ method: "eth_getStorageAt", params: [address, key, block] })),
-    ]);
-    return {
-      address,
-      balance,
-      nonce,
-      codeHash: keccak256(code as Hex),
-      storageHash: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      accountProof: [],
-      storageProof: keys.map((key: Hex, i: number) => ({ key, value: values[i], proof: [] })),
-    };
-  },
-};
+function proofless(rpc: string) {
+  const upstream = http(rpc)({});
+  return {
+    ...upstream,
+    async request(args: { method: string; params?: any }) {
+      if (args.method !== "eth_getProof") return upstream.request(args as any);
+      const [address, keys, block] = args.params;
+      const [balance, nonce, code, ...values] = await Promise.all([
+        upstream.request({ method: "eth_getBalance", params: [address, block] }),
+        upstream.request({ method: "eth_getTransactionCount", params: [address, block] }),
+        upstream.request({ method: "eth_getCode", params: [address, block] }),
+        ...keys.map((key: Hex) => upstream.request({ method: "eth_getStorageAt", params: [address, key, block] })),
+      ]);
+      return {
+        address,
+        balance,
+        nonce,
+        codeHash: keccak256(code as Hex),
+        storageHash: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        accountProof: [],
+        storageProof: keys.map((key: Hex, i: number) => ({ key, value: values[i], proof: [] })),
+      };
+    },
+  };
+}
 
-export const client = createMemoryClient({ fork: { transport: forkTransport as any }, miningConfig: { type: "auto" } });
+export const client = forkOf(RPC);
 
 
 export const usd = (n: number) => BigInt(Math.round(n * 1e6));

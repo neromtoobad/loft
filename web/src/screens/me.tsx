@@ -82,6 +82,9 @@ export function Me() {
       </div>
 
       <ErrorLine error={error} />
+      <button className="secondary" onClick={() => navigate("/corridor")}>
+        The corridor: live London → Lagos stats
+      </button>
       <button
         className="ghost"
         onClick={() => {

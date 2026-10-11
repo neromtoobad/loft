@@ -11,6 +11,42 @@ export type AppConfig = {
   explorer: string;
   kimi: boolean;
   indexer: boolean;
+  usdc: Address | null;
+  convert: Address | null;
+  /** Who quotes any-chain top-ups: Aurora Intents, or the NEAR Intents API it builds on. */
+  topup: "aurora" | "near-intents" | null;
+};
+
+export type Corridor = {
+  source: "envio" | "chain";
+  totals: { volume: string; payments: number; accounts: number | null; topups: number; topupVolume: string };
+  days: { day: string; volume: string; topupVolume: string; payments: number }[];
+  recent: { kind: "DIRECT" | "LINK" | "ORDER" | "POT" | "TOPUP"; amount: string; at: number; txHash: string }[];
+  confirm: { samples: number; avgMs: number | null; medianMs: number | null; fastestMs: number | null };
+  gasWei: string;
+  benchmark: { pct: number; source: string };
+  ngnPerUsd: number | null;
+};
+
+export type TopUpSource = { id: string; chain: string; symbol: "USDC" | "USDT"; evm: boolean };
+
+export type TopUpQuote = {
+  provider: "aurora" | "near-intents";
+  depositAddress: string;
+  depositMemo?: string;
+  amountIn: string;
+  amountInFormatted: string;
+  amountOut: string;
+  amountOutFormatted: string;
+  minAmountOut: string;
+  timeEstimate: number;
+  deadline?: string;
+};
+
+export type TopUpStatus = {
+  status: "PENDING_DEPOSIT" | "KNOWN_DEPOSIT_TX" | "INCOMPLETE_DEPOSIT" | "PROCESSING" | "SUCCESS" | "REFUNDED" | "FAILED";
+  originTx?: string;
+  destinationTx?: string;
 };
 
 export class ApiError extends Error {
@@ -122,12 +158,28 @@ export type ParsedIntent = {
   explanation: string;
   usd: number | null;
   ngnPerUsd: number | null;
+  /** Kimi when it's configured, else the built-in rules. */
+  engine: "kimi" | "rules";
 };
 
 export const api = {
   config: () => call<AppConfig>("GET", "/api/config"),
   rate: () => call<{ ngnPerUsd: number; sources: string[] }>("GET", "/api/rate"),
-  balance: (address: Address) => call<{ ausd: string }>("GET", `/api/balance/${address}`),
+  balance: (address: Address) => call<{ ausd: string; usdc: string }>("GET", `/api/balance/${address}`),
+
+  corridor: () => call<Corridor>("GET", "/api/corridor"),
+
+  topupSources: () => call<{ provider: string; sources: TopUpSource[] }>("GET", "/api/topup/sources"),
+  topupQuote: (body: { source: string; amount: number; address: Address; refundTo?: string; dry?: boolean }) =>
+    call<TopUpQuote>("POST", "/api/topup/quote", body),
+  topupStatus: (depositAddress: string, depositMemo?: string) =>
+    call<TopUpStatus>(
+      "GET",
+      `/api/topup/status?${new URLSearchParams({ depositAddress, ...(depositMemo ? { depositMemo } : {}) })}`,
+    ),
+  convertQuote: (amount: bigint) =>
+    call<{ ausdOut: string; fee: string; filled: boolean }>("GET", `/api/convert/quote?amount=${amount}`),
+  convert: (body: object) => call<TxResult & { ausdOut: string }>("POST", "/api/relay/convert", body),
   orders: (address: Address) => call<OrderInfo[]>("GET", `/api/orders/${address}`),
   activity: (address: Address) => call<IndexedPayment[]>("GET", `/api/activity/${address}`),
 

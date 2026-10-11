@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { fromUnits } from "../../../shared/money.ts";
@@ -10,6 +10,7 @@ import { buildActivity } from "../lib/activity.ts";
 import { ago, cadence, ngn, usd, when } from "../lib/format.ts";
 import { useLoft } from "../state.tsx";
 import type { SentItem } from "../lib/vault.ts";
+import { UsdcWaiting } from "./add.tsx";
 import { ErrorLine, Label, Money, Postmark, Stamp, TxLink, errorText, stampDate } from "./ui.tsx";
 
 export function Home() {
@@ -100,6 +101,8 @@ export function Home() {
         </div>
       </div>
 
+      <UsdcWaiting />
+
       <NextUp outgoing={outgoing} />
 
       <div className="ways">
@@ -126,7 +129,7 @@ export function Home() {
         </button>
       </div>
 
-      {config?.kimi && <Ask />}
+      <Ask />
 
       {vault.contacts.length > 0 && (
         <div className="family">
@@ -352,27 +355,95 @@ function LinkDetail({ item }: { item: SentItem }) {
   );
 }
 
-/** Plain-language requests, read by Kimi and always confirmed before anything moves. */
+/** Browsers name it differently; Safari and Chrome both still prefix it. */
+type Recognition = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+};
+function speechRecognition(): (new () => Recognition) | null {
+  const w = window as unknown as { SpeechRecognition?: new () => Recognition; webkitSpeechRecognition?: new () => Recognition };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+/**
+ * Plain-language requests, typed or spoken ("send Mum fifty thousand naira").
+ * Kimi reads them into a transfer; nothing moves until the user reviews and
+ * confirms it on the send screen with their passkey.
+ */
 function Ask() {
   const { vault } = useLoft();
   const [text, setText] = useState("");
   const [intent, setIntent] = useState<ParsedIntent | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognizer = useRef<Recognition | null>(null);
+  const canListen = useMemo(() => Boolean(speechRecognition()), []);
 
-  async function ask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!text.trim()) return;
+  async function read(sentence: string, spoken: boolean) {
+    if (!sentence.trim()) return;
     setThinking(true);
     setError(null);
     try {
-      setIntent(await api.intent(text, vault?.contacts.map((c) => c.name) ?? []));
+      const parsed = await api.intent(sentence, vault?.contacts.map((c) => c.name) ?? []);
+      setIntent(parsed);
+      // Said aloud, so answer aloud: the confirmation is read back before the review.
+      if (spoken && parsed.kind !== "unknown" && "speechSynthesis" in window) {
+        const u = new SpeechSynthesisUtterance(`${parsed.explanation} Tap review to confirm.`);
+        u.rate = 1.05;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+      }
     } catch (err) {
       setError(errorText(err));
     } finally {
       setThinking(false);
     }
   }
+
+  function listen() {
+    const SR = speechRecognition();
+    if (!SR) return;
+    if (listening) {
+      recognizer.current?.stop();
+      return;
+    }
+    const r = new SR();
+    r.lang = navigator.language || "en-GB";
+    r.interimResults = true;
+    r.continuous = false;
+    let heard = "";
+    r.onresult = (e) => {
+      heard = Array.from(e.results)
+        .map((res) => res[0].transcript)
+        .join(" ");
+      setText(heard);
+      setIntent(null);
+    };
+    r.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") setError("Allow the microphone to talk to Loft.");
+      else if (e.error !== "no-speech" && e.error !== "aborted") setError("Didn't catch that. Try again, or type it.");
+    };
+    r.onend = () => {
+      setListening(false);
+      recognizer.current = null;
+      if (heard.trim()) read(heard, true);
+    };
+    recognizer.current = r;
+    setError(null);
+    setIntent(null);
+    setText("");
+    setListening(true);
+    r.start();
+  }
+
+  useEffect(() => () => recognizer.current?.stop(), []);
 
   function go() {
     if (!intent) return;
@@ -392,17 +463,28 @@ function Ask() {
   }
 
   return (
-    <form className="ask" onSubmit={ask}>
+    <form
+      className={`ask ${canListen ? "with-mic" : ""} ${listening ? "listening" : ""}`}
+      onSubmit={(e) => {
+        e.preventDefault();
+        read(text, false);
+      }}
+    >
       <input
         value={text}
         onChange={(e) => {
           setText(e.target.value);
           setIntent(null);
         }}
-        placeholder="Try “send mum ₦50k every Friday”"
+        placeholder={listening ? "Listening…" : canListen ? "Say “send Mum ₦50k”" : "Try “send mum ₦50k every Friday”"}
         aria-label="Ask Loft"
       />
-      <button className="icon-btn" disabled={thinking || !text.trim()} aria-label="Ask">
+      {canListen && (
+        <button type="button" className={`mic-btn ${listening ? "on" : ""}`} onClick={listen} aria-label={listening ? "Stop listening" : "Speak"} aria-pressed={listening}>
+          <Icon.mic size={18} />
+        </button>
+      )}
+      <button className="icon-btn" disabled={thinking || !text.trim() || listening} aria-label="Ask">
         {thinking ? <span className="spinner" /> : "→"}
       </button>
       {intent && (

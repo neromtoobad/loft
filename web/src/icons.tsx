@@ -101,4 +101,10 @@ export const Icon = {
       <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
     </Svg>
   ),
+  mic: (p: { size?: number }) => (
+    <Svg {...p}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+    </Svg>
+  ),
 };

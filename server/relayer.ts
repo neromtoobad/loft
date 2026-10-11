@@ -3,6 +3,7 @@
 import {
   type Address,
   type Hex,
+  type Log,
   createPublicClient,
   createWalletClient,
   http,
@@ -10,11 +11,14 @@ import {
   parseSignature,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { type Network, escrowAbi } from "../shared/config.ts";
+import { type Network, convertAbi, escrowAbi } from "../shared/config.ts";
 
 export type Relayer = ReturnType<typeof createRelayer>;
 
-export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string) {
+/** What a landed transaction did, for the relay log. */
+export type Confirmed = { hash: Hex; functionName: string; ms: number; gasWei: bigint; logs: Log[] };
+
+export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string, onConfirmed?: (c: Confirmed) => void) {
   const transport = http(rpcUrl);
   const account = privateKeyToAccount(privateKey);
   const publicClient = createPublicClient({ chain: network.chain, transport });
@@ -36,10 +40,24 @@ export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string
     // the margin stays modest.
     const estimate = await publicClient.estimateContractGas({ account, address, abi, functionName, args });
     return serial(async () => {
-      const hash = await walletClient.writeContract({ ...request, gas: (estimate * 125n) / 100n });
+      const gas = (estimate * 125n) / 100n;
+      const started = performance.now();
+      const hash = await walletClient.writeContract({ ...request, gas });
       // Bounded, so one transaction that never lands can't freeze every payment queued behind it.
-      const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 30_000 });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 30_000, pollingInterval: 250 });
       if (receipt.status !== "success") throw new Error(`reverted: ${hash}`);
+      try {
+        onConfirmed?.({
+          hash,
+          functionName,
+          ms: performance.now() - started,
+          // Monad charges the gas limit, not the gas used.
+          gasWei: gas * receipt.effectiveGasPrice,
+          logs: receipt.logs,
+        });
+      } catch (err) {
+        console.error("relay log:", (err as Error).message);
+      }
       return { hash, blockNumber: Number(receipt.blockNumber) };
     });
   }
@@ -125,6 +143,17 @@ export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string
       const receipt = await publicClient.getTransactionReceipt({ hash: result.hash });
       const released = parseEventLogs({ abi: escrowAbi, logs: receipt.logs, eventName: "PotReleased" }).length > 0;
       return { ...result, released };
+    },
+
+    /** Swaps USDC on the owner's address into AUSD through LoftConvert. Returns the AUSD received. */
+    async convert(p: { owner: Address; amount: bigint; minOut: bigint; salt: Hex; validBefore: bigint; signature: Hex }) {
+      if (!network.convert) throw new Error(`LoftConvert is not deployed on ${network.name}`);
+      const result = await submit(network.convert, convertAbi, "convert", [
+        p.owner, p.amount, p.minOut, p.salt, p.validBefore, ...vrs(p.signature),
+      ]);
+      const receipt = await publicClient.getTransactionReceipt({ hash: result.hash });
+      const [done] = parseEventLogs({ abi: convertAbi, logs: receipt.logs, eventName: "Converted" });
+      return { ...result, ausdOut: (done as any).args.ausdOut.toString() as string };
     },
 
     releasePot(potId: bigint) {

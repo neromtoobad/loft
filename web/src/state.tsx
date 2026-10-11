@@ -7,6 +7,7 @@ import {
   signClaim,
   signClose,
   signContribution,
+  signConvert,
   signLink,
   signOrder,
   signPot,
@@ -36,6 +37,8 @@ type State = {
   session: Session | null;
   vault: VaultData | null;
   balance: bigint | null;
+  /** USDC sitting on the Loft address, e.g. just delivered from another chain. */
+  usdc: bigint;
   orders: OrderInfo[];
   payments: IndexedPayment[] | null;
   arrivedAt: number;
@@ -66,6 +69,8 @@ type Actions = {
   openPot(p: { title: string; beneficiary: Contact; targetUsd: number; deadline: number }): Promise<{ potId: number; hash: Hex }>;
   chipIn(potId: number, amountUsd: number): Promise<Settled & { released: boolean }>;
   askFamily(amountUsd: number, note: string): Promise<string>;
+  /** Turns all the USDC on this address into AUSD (one signature, no gas). */
+  convertUsdc(): Promise<Settled & { ausdOut: bigint }>;
   setHandle(handle: string): Promise<void>;
   setCharacter(character: Creature): Promise<void>;
   resolveRecipient(input: string): Promise<Contact>;
@@ -88,6 +93,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [vault, setVault] = useState<VaultData | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
+  const [usdc, setUsdc] = useState<bigint>(0n);
   /** When money last arrived, so your creature can celebrate it. */
   const [arrivedAt, setArrivedAt] = useState(0);
   const lastBalance = useRef<bigint | null>(null);
@@ -117,6 +123,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     });
     setVault(null);
     setBalance(null);
+    setUsdc(0n);
     setOrders([]);
     setPayments(null);
   }, []);
@@ -157,6 +164,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     if (lastBalance.current !== null && next > lastBalance.current) setArrivedAt(Date.now());
     lastBalance.current = next;
     setBalance(next);
+    setUsdc(BigInt(b.usdc ?? "0"));
     setOrders(o);
     if (a) setPayments(a);
   }, [session, config]);
@@ -511,6 +519,27 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     [session, vault, withBusy],
   );
 
+  const convertUsdc = useCallback<Actions["convertUsdc"]>(
+    () =>
+      withBusy("Turning it into dollars", async () => {
+        if (!session || !config?.usdc || !config.convert) throw new Error("not available on this network");
+        const { usdc: raw } = await api.balance(session.account.address);
+        const amount = BigInt(raw);
+        if (amount === 0n) throw new Error("No USDC to convert yet");
+        const quote = await api.convertQuote(amount);
+        if (!quote.filled) throw new Error("That's more than the pool can swap at once. Try a smaller top-up.");
+        // Half a percent of room; the signature fixes this floor, so nobody can widen it.
+        const minOut = (BigInt(quote.ausdOut) * 995n) / 1000n;
+        const signed = await signConvert(session.account, { chainId: config.chainId, usdc: config.usdc, convert: config.convert }, amount, minOut);
+        const started = performance.now();
+        const { hash, ausdOut } = await api.convert(signed);
+        const ms = performance.now() - started;
+        await refresh();
+        return { hash, ms, ausdOut: BigInt(ausdOut) };
+      }),
+    [session, config, refresh, withBusy],
+  );
+
   const setHandle = useCallback(
     async (handle: string) => {
       if (!session?.privateKeys) throw new Error("locked");
@@ -535,6 +564,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     session,
     vault,
     balance,
+    usdc,
     orders,
     payments,
     arrivedAt,
@@ -553,6 +583,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     openPot,
     chipIn,
     askFamily,
+    convertUsdc,
     setHandle,
     setCharacter,
     resolveRecipient,

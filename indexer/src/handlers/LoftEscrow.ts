@@ -19,6 +19,8 @@ async function totals(context: Ctx): Promise<Totals> {
       linksClaimed: 0,
       ordersCreated: 0,
       potsCreated: 0,
+      topups: 0,
+      topupVolume: 0n,
     }
   );
 }
@@ -30,6 +32,10 @@ async function touch(context: Ctx, id: string, at: number): Promise<Account> {
   const t = await totals(context);
   context.Totals.set({ ...t, accounts: t.accounts + 1 });
   return { id, sentTotal: 0n, receivedTotal: 0n, sentCount: 0, receivedCount: 0, firstSeen: at, lastSeen: at };
+}
+
+function emptyDay(id: string): DailyStats {
+  return { id, volume: 0n, topupVolume: 0n, payments: 0, direct: 0, links: 0, orders: 0, rateSum: 0n, rateSamples: 0 };
 }
 
 function day(timestamp: number) {
@@ -59,16 +65,7 @@ async function recordPayment(
   context.Account.set({ ...to, receivedTotal: to.receivedTotal + p.amount, receivedCount: to.receivedCount + 1 });
 
   const id = day(at);
-  const d: DailyStats = (await context.DailyStats.get(id)) ?? {
-    id,
-    volume: 0n,
-    payments: 0,
-    direct: 0,
-    links: 0,
-    orders: 0,
-    rateSum: 0n,
-    rateSamples: 0,
-  };
+  const d: DailyStats = (await context.DailyStats.get(id)) ?? emptyDay(id);
   context.DailyStats.set({
     ...d,
     volume: d.volume + p.amount,
@@ -281,4 +278,26 @@ indexer.onEvent({ contract: "LoftEscrow", event: "PotReleased" }, async ({ event
       pot_id: pot.id,
     });
   }
+});
+
+// ---------------------------------------------------------------- top-ups
+
+/** USDC that came in from another chain and became AUSD. Inflow, not a payment between people. */
+indexer.onEvent({ contract: "LoftConvert", event: "Converted" }, async ({ event, context }) => {
+  const p = event.params;
+  const at = event.block.timestamp;
+  context.Account.set(await touch(context, p.owner, at));
+  context.TopUp.set({
+    id: `${event.transaction.hash}-${event.logIndex}`,
+    owner_id: p.owner,
+    usdcIn: p.usdcIn,
+    ausdOut: p.ausdOut,
+    txHash: event.transaction.hash,
+    timestamp: at,
+  });
+  const id = day(at);
+  const d = (await context.DailyStats.get(id)) ?? emptyDay(id);
+  context.DailyStats.set({ ...d, topupVolume: d.topupVolume + p.ausdOut });
+  const t = await totals(context);
+  context.Totals.set({ ...t, topups: t.topups + 1, topupVolume: t.topupVolume + p.ausdOut });
 });

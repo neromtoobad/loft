@@ -5,6 +5,7 @@ import { Add } from "./screens/add.tsx";
 import { Ask, RequestPage } from "./screens/ask.tsx";
 import { PotPage, Pots } from "./screens/pots.tsx";
 import { Claim } from "./screens/claim.tsx";
+import { CorridorPage } from "./screens/corridor.tsx";
 import { Home } from "./screens/home.tsx";
 import { Me } from "./screens/me.tsx";
 import { Schedule } from "./screens/schedule.tsx";
@@ -13,7 +14,7 @@ import { Welcome } from "./screens/welcome.tsx";
 import { useLoft } from "./state.tsx";
 import { isCreature } from "./cast.tsx";
 
-export type Route = "/" | "/send" | "/schedule" | "/me" | "/add" | "/c" | "/ask" | "/r" | "/pots" | "/p";
+export type Route = "/" | "/send" | "/schedule" | "/me" | "/add" | "/c" | "/ask" | "/r" | "/pots" | "/p" | "/corridor";
 
 export function navigate(to: string) {
   history.pushState(null, "", to);
@@ -27,7 +28,7 @@ function useRoute(): Route {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-  return (["/send", "/schedule", "/me", "/add", "/c", "/ask", "/r", "/pots", "/p"].includes(path) ? path : "/") as Route;
+  return (["/send", "/schedule", "/me", "/add", "/c", "/ask", "/r", "/pots", "/p", "/corridor"].includes(path) ? path : "/") as Route;
 }
 
 export function App() {
@@ -46,6 +47,7 @@ export function App() {
   // Shared request and pot links open for anyone; they offer a Loft inline.
   else if (route === "/r") screen = <RequestPage />;
   else if (route === "/p") screen = <PotPage />;
+  else if (route === "/corridor") screen = <CorridorPage />;
   else if (!session || !vault) screen = <Welcome returning={Boolean(passkeyHint())} />;
   else if (route === "/send") screen = <Send />;
   else if (route === "/schedule") screen = <Schedule />;

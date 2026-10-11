@@ -9,7 +9,7 @@ import {
   toBytes,
   toHex,
 } from "viem";
-import { AUSD_DECIMALS, AUSD_DOMAIN, RECEIVE_AUTH_TYPES } from "./config.ts";
+import { AUSD_DECIMALS, AUSD_DOMAIN, RECEIVE_AUTH_TYPES, USDC_DOMAIN } from "./config.ts";
 
 export type Ctx = { chainId: number; ausd: Address; escrow: Address };
 
@@ -191,4 +191,44 @@ export function potNonce(escrow: Address, potId: bigint, ref: Hex): Hex {
 export async function signContribution(account: LocalAccount, ctx: Ctx, potId: bigint, amount: bigint, ref: Hex = randomNonce()) {
   const auth = await signReceive(account, ctx, amount, potNonce(ctx.escrow, potId, ref));
   return { potId, from: account.address, amount, ref, ...auth };
+}
+
+// ----------------------------------------------------------------- convert
+
+/** Mirrors LoftConvert.convertNonce: it commits to the minimum AUSD out. */
+export function convertNonce(convert: Address, owner: Address, amount: bigint, minOut: bigint, salt: Hex): Hex {
+  return keccak256(
+    encodeAbiParameters(
+      [{ type: "address" }, { type: "string" }, { type: "address" }, { type: "uint256" }, { type: "uint256" }, { type: "bytes32" }],
+      [convert, "convert", owner, amount, minOut, salt],
+    ),
+  );
+}
+
+/**
+ * Lets LoftConvert take `amount` USDC from the owner's address and send back
+ * at least `minOut` AUSD, in one relayed transaction.
+ */
+export async function signConvert(
+  account: LocalAccount,
+  c: { chainId: number; usdc: Address; convert: Address },
+  amount: bigint,
+  minOut: bigint,
+  salt: Hex = randomNonce(),
+) {
+  const vb = validBefore();
+  const signature = await account.signTypedData({
+    domain: { ...USDC_DOMAIN, chainId: c.chainId, verifyingContract: c.usdc },
+    types: RECEIVE_AUTH_TYPES,
+    primaryType: "ReceiveWithAuthorization",
+    message: {
+      from: account.address,
+      to: c.convert,
+      value: amount,
+      validAfter: 0n,
+      validBefore: vb,
+      nonce: convertNonce(c.convert, account.address, amount, minOut, salt),
+    },
+  });
+  return { owner: account.address, amount, minOut, salt, validBefore: vb, signature };
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { navigate } from "../app.tsx";
 import { FEATURED, type Creature, CourierSprite, CreatureAvatar, CreaturePicker } from "../cast.tsx";
 import { useLoft } from "../state.tsx";
 import { ErrorLine, Label, LoftMark, Point, errorText } from "./ui.tsx";
@@ -98,7 +99,12 @@ export function Welcome({ returning }: { returning: boolean }) {
         <ErrorLine error={error} />
       </div>
       {mode === "start" && <Compare />}
-      <p className="fineprint center">Agora dollars (AUSD) on Monad · passkeys by Mera · unaudited, use small amounts</p>
+      <p className="fineprint center">
+        Agora dollars (AUSD) on Monad · passkeys by Mera · unaudited, use small amounts ·{" "}
+        <a href="/corridor" onClick={(e) => (e.preventDefault(), navigate("/corridor"))}>
+          live corridor stats
+        </a>
+      </p>
     </section>
   );
 }

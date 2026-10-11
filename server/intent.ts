@@ -64,3 +64,81 @@ export async function parseIntent(text: string, contacts: string[]): Promise<Int
     explanation: parsed.explanation ?? "",
   };
 }
+
+// ---------------------------------------------------------------- fallback
+
+const UNITS: Record<string, number> = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, a: 1,
+};
+const SCALES: Record<string, number> = { hundred: 100, thousand: 1_000, k: 1_000, million: 1_000_000, m: 1_000_000 };
+const DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+/** "fifty thousand" → 50000, "2.5k" → 2500, "50,000" → 50000. Returns null if there's no number. */
+export function readAmount(text: string): number | null {
+  const digits = text.match(/(\d[\d,]*(?:\.\d+)?)\s*(k|m|thousand|million)?\b/i);
+  if (digits) {
+    const n = Number(digits[1].replace(/,/g, ""));
+    const scale = digits[2] ? SCALES[digits[2].toLowerCase()] : 1;
+    return n * scale;
+  }
+  let total = 0;
+  let current = 0;
+  let seen = false;
+  for (const word of text.toLowerCase().split(/[\s-]+/)) {
+    if (word in UNITS && (word !== "a" || seen === false)) {
+      if (word === "a") continue; // only counts before a scale ("a hundred")
+      current += UNITS[word];
+      seen = true;
+    } else if (word in SCALES && word.length > 1) {
+      current = (current || 1) * SCALES[word];
+      if (SCALES[word] >= 1000) {
+        total += current;
+        current = 0;
+      }
+      seen = true;
+    } else if (seen && word !== "and") {
+      break;
+    }
+  }
+  return seen ? total + current : null;
+}
+
+/**
+ * A rule-based reading of the common phrasings, used when Kimi isn't
+ * configured: "send mum fifty thousand naira", "send @tunde $20 every friday".
+ */
+export function ruleIntent(text: string, contacts: string[]): Intent {
+  const t = text.trim();
+  const lower = t.toLowerCase();
+  const amount = readAmount(lower);
+  const currency = /₦|naira|\bngn\b/.test(lower) ? "NGN" : /\$|dollar|\busd\b/.test(lower) ? "USD" : amount && amount >= 1000 ? "NGN" : "USD";
+  const contact = contacts.find((c) => lower.includes(c.replace(/^@/, "").toLowerCase()));
+  const named = t.match(/\b(?:send|give|pay)\s+(@?[A-Za-z][\w.]*)/i)?.[1];
+  const recipient = contact ?? (named && !/^\d/.test(named) ? named : null);
+  const weekday = DAYS.findIndex((d) => lower.includes(d));
+  const cadence = /every day|daily/.test(lower)
+    ? "daily"
+    : /every week|weekly|every (sun|mon|tues|wednes|thurs|fri|satur)day/.test(lower)
+      ? "weekly"
+      : /every month|monthly/.test(lower)
+        ? "monthly"
+        : null;
+  const note = t.match(/\bfor\s+(.+)$/i)?.[1]?.replace(/[.!]$/, "") ?? null;
+  const kind = !/\b(send|give|pay|transfer)\b/i.test(t) || amount === null ? "unknown" : cadence ? "schedule" : "send";
+  const shown = amount === null ? "" : currency === "NGN" ? `₦${amount.toLocaleString("en-NG")}` : `$${amount.toLocaleString("en-US")}`;
+  return {
+    kind,
+    recipient,
+    amount,
+    currency,
+    mode: /top ?up|keep .* at/.test(lower) ? "topup" : "fixed",
+    cadence,
+    weekday: weekday >= 0 ? weekday : null,
+    count: null,
+    note: note && !DAYS.some((d) => note.toLowerCase().includes(d)) ? note : null,
+    explanation:
+      kind === "unknown" ? "" : `Send ${shown} to ${recipient ?? "someone"}${cadence ? `, ${cadence}` : ""}${note ? ` for ${note}` : ""}.`,
+  };
+}

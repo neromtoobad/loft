@@ -7,10 +7,10 @@ const usd = (n: number) => BigInt(Math.round(n * 1e6));
 const DAY = 1_790_000_000; // a fixed UTC moment
 
 let log = 0;
-function ev(event: string, params: Record<string, unknown>, timestamp = DAY) {
+function ev(event: string, params: Record<string, unknown>, timestamp = DAY, contract: "LoftEscrow" | "LoftConvert" = "LoftEscrow") {
   log += 1;
   return {
-    contract: "LoftEscrow" as const,
+    contract,
     event,
     params,
     // Above config.yaml's start_block, or the simulator filters the event out.
@@ -101,5 +101,18 @@ describe("Loft indexer", () => {
     t.expect(toMum).toHaveLength(1);
     t.expect(toMum[0].amount).toBe(usd(32));
     t.expect((await indexer.Totals.getOrThrow("all")).potsCreated).toBe(1);
+  });
+
+  it("counts USDC that arrived from another chain as a top-up, not a payment", async (t) => {
+    const indexer = await run([
+      ev("Converted", { owner: dimeji, usdcIn: usd(20), ausdOut: usd(20.001), salt: REF }, DAY, "LoftConvert"),
+      ev("Sent", { from: dimeji, to: mum, amount: usd(20), ref: REF }),
+    ]);
+    const topups = await indexer.TopUp.getAll();
+    t.expect(topups).toHaveLength(1);
+    t.expect(topups[0]).toMatchObject({ owner_id: dimeji, usdcIn: usd(20), ausdOut: usd(20.001) });
+    t.expect(await indexer.Totals.getOrThrow("all")).toMatchObject({ topups: 1, topupVolume: usd(20.001), payments: 1, volume: usd(20) });
+    const day = (await indexer.DailyStats.getAll())[0];
+    t.expect(day).toMatchObject({ topupVolume: usd(20.001), volume: usd(20), payments: 1 });
   });
 });
