@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CREATURES, type Creature, CourierSprite, CreaturePicker, CreatureSprite } from "../cast.tsx";
+import { CREATURES, type Creature, CourierSprite, CreaturePicker, CreatureSprite, Skyline } from "../cast.tsx";
 import { useLoft } from "../state.tsx";
 import { ErrorLine, errorText } from "./ui.tsx";
 
@@ -21,7 +21,8 @@ export function Welcome({ returning }: { returning: boolean }) {
 
   return (
     <section className="welcome">
-      <div className="welcome-hero" aria-hidden>
+      <div className="welcome-hero sky" aria-hidden>
+        <Skyline />
         <CourierSprite pose="fly-up" size={132} />
         <div className="stage">
           {CREATURES.map((c) => (

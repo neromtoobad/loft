@@ -39,7 +39,7 @@ export function Home() {
   return (
     <section className="home">
       <header className="app-head">
-        <button className="avatar" onClick={() => navigate("/me")} aria-label="Your profile">
+        <button className="avatar" data-creature={creature} onClick={() => navigate("/me")} aria-label="Your profile">
           <img src={`/cast/${creature}/idle.webp`} alt="" />
         </button>
         <div className="hello">
@@ -64,7 +64,7 @@ export function Home() {
           <Icon.lock size={14} />
           Only you can move it
         </button>
-        <CreatureSprite kind={creature} pose={pose} size={124} label={`Your ${creature}`} />
+        <CreatureSprite kind={creature} pose={pose} size={150} label={`Your ${creature}`} />
       </div>
 
       <div className="quick">
@@ -140,12 +140,14 @@ export function Home() {
         <p className="empty">Nothing yet. Send someone a few dollars and it shows up here.</p>
       ) : (
         <div className="list">
-          {activity.map((a) => {
+          {activity.map((a, i) => {
             const kind = character(a.other);
+            const day = dayLabel(a.at);
             return (
               <div key={a.key}>
+                {(i === 0 || dayLabel(activity[i - 1].at) !== day) && <div className="day">{day}</div>}
                 <button className="row activity" onClick={() => setOpen(open === a.key ? null : a.key)} aria-expanded={open === a.key}>
-                  <span className={`glyph ${a.dir}`} aria-hidden>
+                  <span className={`glyph ${a.dir}`} data-creature={isCreature(kind) ? kind : undefined} aria-hidden>
                     {isCreature(kind) ? (
                       <img src={`/cast/${kind}/idle.webp`} alt="" className="glyph-img" />
                     ) : a.dir === "in" ? (
@@ -189,6 +191,16 @@ export function Home() {
 }
 
 const CHEER_MS = 4000;
+
+/** "Today", "Yesterday", or a short date: Activity is grouped by the day money moved. */
+function dayLabel(ms: number) {
+  const d = new Date(ms);
+  const today = new Date();
+  const days = Math.round((new Date(today.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
 
 /**
  * Your creature's mood, from real numbers only: it cheers for a few seconds

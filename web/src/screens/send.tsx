@@ -7,7 +7,7 @@ import { ngn, seconds, short, usd } from "../lib/format.ts";
 import { PROMPT_FREE_LIMIT_USD } from "../lib/keys.ts";
 import type { Contact } from "../lib/vault.ts";
 import { useLoft } from "../state.tsx";
-import { type Creature, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
+import { type Creature, Confetti, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
 import { Icon } from "../icons.tsx";
 import { Assure, ErrorLine, TopBar, TxLink, errorText } from "./ui.tsx";
 
@@ -253,6 +253,7 @@ function Done({
   const message = `I sent you ${usd(amount)} on Loft. Tap to receive it: ${url}`;
   return (
     <section className="done">
+      {done && !url && <Confetti />}
       <Delivery from={from} to={flight.to} toRoof={flight.toRoof} confirmed={Boolean(done)} />
       <h2 className="display">
         {!done ? `On its way to ${flight.name}…` : url ? "Waiting on their roof" : `${flight.name} has it`}

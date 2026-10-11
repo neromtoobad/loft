@@ -36,7 +36,8 @@ export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string
     const estimate = await publicClient.estimateContractGas({ account, address, abi, functionName, args });
     return serial(async () => {
       const hash = await walletClient.writeContract({ ...request, gas: (estimate * 125n) / 100n });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      // Bounded, so one transaction that never lands can't freeze every payment queued behind it.
+      const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 30_000 });
       if (receipt.status !== "success") throw new Error(`reverted: ${hash}`);
       return { hash, blockNumber: Number(receipt.blockNumber) };
     });

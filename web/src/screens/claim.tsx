@@ -7,7 +7,7 @@ import { type LinkInfo, api } from "../lib/api.ts";
 import { openFromLink } from "../lib/crypto.ts";
 import { ngn, seconds, short, usd } from "../lib/format.ts";
 import { type Settled, useLoft } from "../state.tsx";
-import { type Creature, CourierSprite, CreaturePicker, CreatureSprite, isCreature } from "../cast.tsx";
+import { type Creature, Confetti, CourierSprite, CreaturePicker, CreatureSprite, Skyline, isCreature } from "../cast.tsx";
 import { HouseMark } from "./welcome.tsx";
 import { Assure, ErrorLine, TxLink, errorText } from "./ui.tsx";
 
@@ -83,7 +83,9 @@ export function Claim() {
   if (done) {
     return (
       <section className="done">
-        <div className="stage">
+        <div className="stage sky">
+          <Skyline />
+          <Confetti />
           <CreatureSprite kind={mine} pose="cheer" size={150} label="You" />
           <CourierSprite pose="salute" size={110} />
         </div>
@@ -113,7 +115,8 @@ export function Claim() {
 
   return (
     <section className="claim">
-      <div className="stage claim-stage">
+      <div className="stage claim-stage sky">
+        <Skyline />
         {receiving ? (
           <>
             <CourierSprite pose="handoff" size={104} />

@@ -391,7 +391,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
         await updateVault((v) => {
           let next: VaultData = {
             ...v,
-            received: [{ from: fromName, amount: info.amount, note, txHash: hash, at: Date.now() }, ...v.received],
+            received: [{ from: fromName, fromAddress: info.sender, amount: info.amount, note, txHash: hash, at: Date.now() }, ...v.received],
           };
           if (info.sender.toLowerCase() !== session.account.address.toLowerCase()) {
             next = upsertContact(next, {

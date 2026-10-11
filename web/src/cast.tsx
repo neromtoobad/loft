@@ -119,7 +119,8 @@ export function Delivery({
   const courierPose: CourierPose = landed ? (toRoof ? "perch" : "handoff") : flap ? "fly-up" : "fly-down";
 
   return (
-    <div className="delivery" aria-live="polite">
+    <div className="delivery sky" aria-live="polite">
+      <Skyline />
       <div className="delivery-from">
         <CreatureSprite kind={from} pose={landed ? "cheer" : "wave"} size={120} label="You" />
       </div>
@@ -153,6 +154,7 @@ export function CreaturePicker({ value, onChange }: { value: Creature | null; on
           role="radio"
           aria-checked={value === c}
           className={`pick ${value === c ? "on" : ""}`}
+          data-creature={c}
           onClick={() => onChange(c)}
         >
           <CreatureSprite kind={c} pose={value === c ? "wave" : "idle"} size={84} />
@@ -167,8 +169,61 @@ export function CreaturePicker({ value, onChange }: { value: Creature | null; on
 export function CreatureAvatar({ kind, name, size }: { kind?: string | null; name: string; size?: number }) {
   const style = size ? { width: size, height: size } : undefined;
   return (
-    <span className="avatar" style={style} aria-hidden>
+    <span className="avatar" style={style} data-creature={isCreature(kind) ? kind : undefined} aria-hidden>
       {isCreature(kind) ? <img src={`/cast/${kind}/idle.webp`} alt="" /> : name.replace("@", "").slice(0, 1).toUpperCase()}
     </span>
+  );
+}
+
+/**
+ * The city the courier flies over: rooftops and a water tower in the sky's
+ * own haze colour, so creatures standing in front of it stay the focus.
+ */
+export function Skyline() {
+  return (
+    <svg className="skyline" viewBox="0 0 400 90" preserveAspectRatio="xMidYMax slice" aria-hidden>
+      <g className="far">
+        <rect x="0" y="38" width="34" height="52" rx="3" />
+        <rect x="30" y="22" width="26" height="68" rx="3" />
+        <rect x="60" y="46" width="40" height="44" rx="3" />
+        <rect x="104" y="14" width="22" height="76" rx="3" />
+        <rect x="122" y="34" width="36" height="56" rx="3" />
+        <rect x="236" y="26" width="30" height="64" rx="3" />
+        <rect x="262" y="44" width="42" height="46" rx="3" />
+        <rect x="300" y="10" width="24" height="80" rx="3" />
+        <rect x="330" y="36" width="34" height="54" rx="3" />
+        <rect x="362" y="50" width="38" height="40" rx="3" />
+      </g>
+      <g className="near">
+        <path d="M150 90V58l22-18 22 18v32z" />
+        <rect x="196" y="52" width="38" height="38" rx="3" />
+        <path d="M206 52v-12h4v12M220 52V36h4v16" />
+        <rect x="16" y="62" width="44" height="28" rx="3" />
+        <path d="M70 90V64l18-14 18 14v26z" />
+        <rect x="318" y="60" width="40" height="30" rx="3" />
+        <path d="M370 90V66l15-12 15 12v24z" />
+      </g>
+    </svg>
+  );
+}
+
+/** A one-off burst for the moment money actually lands. Pure CSS, skipped under reduced motion. */
+export function Confetti() {
+  const colors = ["var(--c1)", "var(--c2)", "#2e7cf6", "#147a4c", "#ff5f6d", "#ffd54a"];
+  return (
+    <div className="confetti" aria-hidden>
+      {Array.from({ length: 28 }, (_, i) => (
+        <i
+          key={i}
+          style={{
+            left: `${(i * 37) % 100}%`,
+            background: colors[i % colors.length],
+            animationDelay: `${(i % 7) * 60}ms`,
+            animationDuration: `${1300 + ((i * 53) % 700)}ms`,
+            transform: `rotate(${(i * 47) % 360}deg)`,
+          }}
+        />
+      ))}
+    </div>
   );
 }

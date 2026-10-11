@@ -9,6 +9,7 @@ import { Schedule } from "./screens/schedule.tsx";
 import { Send } from "./screens/send.tsx";
 import { Welcome } from "./screens/welcome.tsx";
 import { useLoft } from "./state.tsx";
+import { isCreature } from "./cast.tsx";
 
 export type Route = "/" | "/send" | "/schedule" | "/me" | "/add" | "/c";
 
@@ -30,6 +31,13 @@ function useRoute(): Route {
 export function App() {
   const route = useRoute();
   const { session, vault, busy } = useLoft();
+
+  // Your creature's colours theme the whole app (see [data-creature] in styles.css).
+  const creature = isCreature(vault?.character) ? vault.character : null;
+  useEffect(() => {
+    if (creature) document.documentElement.dataset.creature = creature;
+    else delete document.documentElement.dataset.creature;
+  }, [creature]);
 
   let screen;
   if (route === "/c") screen = <Claim />;
@@ -59,21 +67,26 @@ export function App() {
 function TabBar({ route }: { route: Route }) {
   const items: { to: Route; label: string; icon: keyof typeof Icon }[] = [
     { to: "/", label: "Home", icon: "home" },
-    { to: "/send", label: "Send", icon: "send" },
     { to: "/schedule", label: "Schedule", icon: "calendar" },
+    { to: "/add", label: "Add", icon: "plus" },
     { to: "/me", label: "You", icon: "user" },
   ];
+  const tab = (it: (typeof items)[number]) => {
+    const Glyph = Icon[it.icon];
+    return (
+      <button key={it.to} className={route === it.to ? "on" : ""} aria-current={route === it.to ? "page" : undefined} onClick={() => navigate(it.to)}>
+        <Glyph size={22} />
+        {it.label}
+      </button>
+    );
+  };
   return (
     <nav className="tabbar" aria-label="Main">
-      {items.map((it) => {
-        const Glyph = Icon[it.icon];
-        return (
-          <button key={it.to} className={route === it.to ? "on" : ""} aria-current={route === it.to ? "page" : undefined} onClick={() => navigate(it.to)}>
-            <Glyph size={22} />
-            {it.label}
-          </button>
-        );
-      })}
+      {items.slice(0, 2).map(tab)}
+      <button className="fab" aria-label="Send money" onClick={() => navigate("/send")}>
+        <Icon.send size={26} />
+      </button>
+      {items.slice(2).map(tab)}
     </nav>
   );
 }

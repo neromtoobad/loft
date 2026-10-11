@@ -1426,3 +1426,299 @@ button.row {
 .lede + .assure {
   margin-top: -10px;
 }
+
+/* =================================================== the cast's colours
+   Each creature brings its own palette. The signed-in user's creature is set
+   on <html>; avatars and picker cards carry their own. */
+
+:root {
+  --c1: #ffc46b;
+  --c2: #e8662a;
+  --c-soft: #fff3e6;
+  --c-ink: #a3420f;
+  --tabbar: 92px;
+}
+
+[data-creature="cheetah"] {
+  --c1: #ffd54a;
+  --c2: #ff9d00;
+  --c-soft: #fff7da;
+  --c-ink: #8a5300;
+}
+
+[data-creature="fennec"] {
+  --c1: #ffb0a6;
+  --c2: #ff5f6d;
+  --c-soft: #ffefec;
+  --c-ink: #b23446;
+}
+
+[data-creature="lion"] {
+  --c1: #ffb347;
+  --c2: #e8461e;
+  --c-soft: #fff0e3;
+  --c-ink: #a33212;
+}
+
+[data-creature="parrot"] {
+  --c1: #6fe3d0;
+  --c2: #2e7cf6;
+  --c-soft: #e8f5ff;
+  --c-ink: #1a5bb8;
+}
+
+/* ------------------------------------------------------- balance card */
+
+.balance-card {
+  min-height: 200px;
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--c1) 45%, var(--line));
+  background:
+    radial-gradient(70% 85% at 90% 95%, color-mix(in srgb, var(--c2) 70%, transparent) 0%, transparent 70%),
+    radial-gradient(55% 70% at 82% 62%, color-mix(in srgb, var(--c1) 85%, transparent) 0%, transparent 75%),
+    linear-gradient(160deg, #fff 0%, var(--c-soft) 62%);
+  box-shadow: 0 22px 44px -28px color-mix(in srgb, var(--c2) 80%, transparent);
+}
+
+.balance-card > :not(.creature) {
+  position: relative;
+  z-index: 1;
+}
+
+.balance-card .amount,
+.amt,
+.leg-row input,
+.leg-row .leg-value,
+.claim .amount {
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-card .creature {
+  right: 2px;
+  bottom: 8px;
+  z-index: 0;
+}
+
+.balance-card .creature::before {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -5px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(23, 20, 15, 0.28), transparent);
+  z-index: -1;
+}
+
+.balance-card .own {
+  color: var(--green);
+}
+
+/* ------------------------------------------------------ quick actions */
+
+.quick .disc {
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  transition: transform 0.12s ease;
+}
+
+.quick button:active .disc {
+  transform: scale(0.93);
+}
+
+.quick button:nth-child(1) .disc {
+  background: var(--brand);
+  color: var(--brand-ink);
+  box-shadow: 0 12px 22px -12px var(--brand);
+}
+
+.quick button:nth-child(2) .disc {
+  background: #e7efff;
+  color: #2e6bd9;
+}
+
+.quick button:nth-child(3) .disc {
+  background: #e3f6ea;
+  color: var(--green);
+}
+
+.quick button:nth-child(4) .disc {
+  background: #fff0d9;
+  color: #b86e00;
+}
+
+/* ------------------------------------------------- avatars and picker */
+
+.avatar[data-creature],
+.app-head .avatar[data-creature],
+.people .avatar[data-creature] {
+  background: var(--c-soft);
+  box-shadow: inset 0 0 0 2px var(--c1);
+}
+
+.pick {
+  background: var(--c-soft);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.pick.on {
+  background: color-mix(in srgb, var(--c1) 38%, #fff);
+  box-shadow: inset 0 0 0 2px var(--c2);
+  transform: translateY(-2px);
+}
+
+/* ------------------------------------------------------------ activity */
+
+.day {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 16px 0 0;
+}
+
+.list > div:first-child .day {
+  margin-top: 0;
+}
+
+.day + .row {
+  border-top: 0;
+}
+
+.activity .glyph[data-creature] {
+  background: var(--c-soft);
+  box-shadow: inset 0 0 0 2px var(--c1);
+}
+
+/* ------------------------------------------------- floating tab bar */
+
+.tabbar {
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  width: calc(100% - 24px);
+  max-width: 456px;
+  height: 66px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 40px -18px rgba(23, 20, 15, 0.35);
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+}
+
+.tabbar button {
+  height: 100%;
+}
+
+.tabbar .fab {
+  width: 62px;
+  height: 62px;
+  justify-self: center;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  transform: translateY(-18px);
+  box-shadow:
+    0 0 0 6px #fff,
+    0 14px 26px -10px rgba(184, 71, 26, 0.75);
+}
+
+.tabbar .fab:active {
+  transform: translateY(-18px) scale(0.94);
+}
+
+/* ------------------------------------------------------------- the sky
+   Delivery, claim and welcome are scenes: a morning sky, a sun, drifting
+   clouds and rooftops. Everything decorative sits behind the cast. */
+
+.sky,
+.done .stage.sky,
+.claim-stage.sky,
+.welcome-hero.sky {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 86% 16%, #fff7d1 0 20px, rgba(255, 224, 140, 0.45) 21px 42px, transparent 43px),
+    linear-gradient(180deg, #bfe2ff 0%, #dcefff 45%, #fff3e2 100%);
+}
+
+.sky::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(30px 12px at 16% 22%, rgba(255, 255, 255, 0.95) 97%, transparent),
+    radial-gradient(20px 11px at 21% 17%, rgba(255, 255, 255, 0.95) 97%, transparent),
+    radial-gradient(36px 13px at 58% 12%, rgba(255, 255, 255, 0.9) 97%, transparent),
+    radial-gradient(22px 11px at 63% 8%, rgba(255, 255, 255, 0.9) 97%, transparent),
+    radial-gradient(26px 10px at 40% 34%, rgba(255, 255, 255, 0.7) 97%, transparent);
+  animation: drift 24s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  to {
+    transform: translateX(22px);
+  }
+}
+
+.skyline {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 40%;
+}
+
+.skyline .far {
+  fill: #cfe0f1;
+}
+
+.skyline .near {
+  fill: #b7cde3;
+}
+
+/* ------------------------------------------------------------ confetti */
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti i {
+  position: absolute;
+  top: -16px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: fall;
+  animation-timing-function: cubic-bezier(0.3, 0.6, 0.6, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(108vh) rotate(560deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti {
+    display: none;
+  }
+  .sky::before {
+    animation: none;
+  }
+}
