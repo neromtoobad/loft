@@ -3,7 +3,8 @@
 FROM node:24-slim
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+# npm install, not ci: the lockfile was made on macOS and lacks some Linux-only optional builds.
+RUN npm install --no-audit --no-fund
 COPY . .
 RUN npm run build
 ENV NODE_ENV=production NETWORK=mainnet DATA_DIR=/data
