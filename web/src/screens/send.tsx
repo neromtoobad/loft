@@ -9,7 +9,7 @@ import type { Contact } from "../lib/vault.ts";
 import { useLoft } from "../state.tsx";
 import { type Creature, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
 import { Icon } from "../icons.tsx";
-import { Assure, ErrorLine, Label, Money, TopBar, TxLink, errorText } from "./ui.tsx";
+import { Assure, ErrorLine, Label, Money, Postmark, TopBar, TxLink, errorText } from "./ui.tsx";
 
 type Target = { kind: "contact"; contact: Contact } | { kind: "link"; label: string };
 
@@ -293,11 +293,13 @@ function Done({
         </>
       )}
       {done && (
-        <div className="card receipt">
+        <div className="card receipt perforated">
           <div className="card-head">
             <h3>Receipt</h3>
-            <Label>{url ? "Link" : "Direct"}</Label>
           </div>
+          <span className="receipt-mark">
+            <Postmark top={url ? "Held" : "Landed"} bottom={seconds(done.ms)} />
+          </span>
           <div className="row">
             <span>To</span>
             <strong>{flight.name}</strong>

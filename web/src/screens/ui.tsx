@@ -3,6 +3,7 @@ import { navigate } from "../app.tsx";
 import { Icon } from "../icons.tsx";
 import { ApiError } from "../lib/api.ts";
 import { ngn, usdParts } from "../lib/format.ts";
+import { isCreature } from "../cast.tsx";
 
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return e.message;
@@ -90,4 +91,52 @@ export function Point({ icon, children }: { icon: "lock" | "check" | "phone" | "
       <span>{children}</span>
     </p>
   );
+}
+
+/** The mark: a loft roof over a doorway, with the courier's orange at its heart. */
+export function LoftMark({ size = 24 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 28 28" width={size} height={size} aria-hidden>
+      <path d="M3 13.5 14 4l11 9.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 12v11.5h14V12" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
+      <circle cx="14" cy="15.5" r="2.3" fill="var(--accent)" />
+    </svg>
+  );
+}
+
+/** A postage stamp with perforated edges, carrying someone's creature (or the Loft mark). */
+export function Stamp({ kind, value }: { kind?: string | null; value?: string }) {
+  return (
+    <span className="stamp" data-creature={isCreature(kind) ? kind : undefined} aria-hidden>
+      <span className="stamp-face">{isCreature(kind) ? <img src={`/cast/${kind}/idle.webp`} alt="" /> : <LoftMark size={30} />}</span>
+      {value && <span className="stamp-value">{value}</span>}
+    </span>
+  );
+}
+
+/** A postmark: two rings with the place and the time, and the cancel lines trailing off. */
+export function Postmark({ top, bottom }: { top: string; bottom: string }) {
+  return (
+    <svg className="postmark" viewBox="0 0 132 66" aria-hidden>
+      <g fill="none" stroke="currentColor" strokeWidth="1.3">
+        <circle cx="99" cy="33" r="29" />
+        <circle cx="99" cy="33" r="23" strokeWidth="0.8" />
+        <path d="M2 17q7-5 14 0t14 0 14 0 14 0 14 0" />
+        <path d="M2 27q7-5 14 0t14 0 14 0 14 0 14 0" />
+        <path d="M2 37q7-5 14 0t14 0 14 0 14 0 14 0" />
+        <path d="M2 47q7-5 14 0t14 0 14 0 14 0 14 0" />
+      </g>
+      <text x="99" y="30" textAnchor="middle">
+        {top}
+      </text>
+      <text x="99" y="42" textAnchor="middle">
+        {bottom}
+      </text>
+    </svg>
+  );
+}
+
+/** Today as a postmark date: "11 OCT". */
+export function stampDate(d = new Date()) {
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }).toUpperCase();
 }

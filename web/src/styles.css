@@ -1,33 +1,34 @@
-/* Loft. Light, quiet and exact: a neutral canvas, white cards, one dark hero
-   card per screen for the money, thin Geist numerals with quiet cents, small
-   uppercase Geist Mono labels, and a single orange accent. The cast is lit
-   inside the dark cards; their colours survive only as glows and tints. */
+/* Loft. Airmail, done quietly: a warm paper canvas, white cards, one warm
+   espresso card per screen for the money, Instrument Serif headlines over
+   Inter numerals with quiet cents, IBM Plex Mono labels, and the airmail
+   stripe, stamp and postmark as the only ornament. The cast is lit inside the
+   dark cards; their colours survive only as glows, tints and stamps. */
 
 :root {
-  --canvas: #f2f2f0;
+  --canvas: #f4f1ea;
   --surface: #ffffff;
-  --surface-2: #f6f6f4;
-  --ink: #0b0b0c;
-  --ink-2: #3a3a3e;
-  --muted: rgba(11, 11, 12, 0.54);
-  --faint: rgba(11, 11, 12, 0.36);
-  --line: rgba(11, 11, 12, 0.08);
-  --line-2: rgba(11, 11, 12, 0.14);
-  --accent: #ff5b1f;
+  --surface-2: #f7f4ee;
+  --ink: #16120e;
+  --ink-2: #3e3832;
+  --muted: rgba(22, 18, 14, 0.56);
+  --faint: rgba(22, 18, 14, 0.38);
+  --line: rgba(22, 18, 14, 0.08);
+  --line-2: rgba(22, 18, 14, 0.14);
+  --accent: #e4572e;
+  --air-red: #e4572e;
+  --air-blue: #24325c;
+  --live: #2fbf71;
   --green: #0f7a4a;
   --green-soft: #e2f2e8;
   --red: #c4372a;
-  --lavender: #e7e4f6;
-  --mint: #dcefdf;
-  --lime: #eef2c8;
-  --mist: #e2ebf2;
   --radius: 28px;
   --radius-md: 22px;
   --radius-sm: 16px;
-  --sans: "Geist", "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --tabbar: 96px;
-  --dark: radial-gradient(120% 95% at 78% 12%, #2b2b30 0%, #0e0e10 55%, #000 100%);
+  --dark: radial-gradient(120% 95% at 78% 12%, #3b2d23 0%, #1b140f 55%, #0e0a07 100%);
 
   /* The cast's colours, used for glows and tints only. */
   --c1: #ffc46b;
@@ -64,7 +65,7 @@ body {
   font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  font-feature-settings: "ss01", "cv11";
+  font-feature-settings: "cv11", "ss03";
 }
 
 .shell {
@@ -88,10 +89,16 @@ p {
 }
 
 .display {
-  font-weight: 300;
-  font-size: 34px;
-  line-height: 1.05;
-  letter-spacing: -0.045em;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+
+.display em,
+.greet em {
+  font-style: italic;
 }
 
 h2 {
@@ -128,14 +135,21 @@ h3 {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255, 91, 31, 0.18);
+  background: var(--live);
+  box-shadow: 0 0 0 3px rgba(47, 191, 113, 0.2);
   flex: none;
+  animation: live 2.4s ease-in-out infinite;
+}
+
+@keyframes live {
+  50% {
+    box-shadow: 0 0 0 6px rgba(47, 191, 113, 0.06);
+  }
 }
 
 .money {
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.04em;
   white-space: nowrap;
 }
 
@@ -555,8 +569,9 @@ button.row {
 }
 
 .app-head .avatar {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
+  box-shadow: 0 0 0 2px var(--surface);
 }
 
 .app-head .hello {
@@ -564,14 +579,15 @@ button.row {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
-.app-head .hello strong {
-  font-size: 22px;
+.greet {
+  font-family: var(--serif);
   font-weight: 400;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
 }
 
 .topbar {
@@ -591,17 +607,19 @@ button.row {
   letter-spacing: -0.02em;
 }
 
+
 .brand-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(11, 11, 12, 0.05);
-  border-radius: 999px;
-  padding: 6px 6px 6px 16px;
-  margin-bottom: 12px;
+  padding: 2px 4px 14px;
 }
 
 .brand {
+  font-family: var(--serif);
+  font-size: 26px !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.01em !important;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -652,25 +670,39 @@ button.row {
   gap: 12px;
 }
 
+
+
+
 .seg {
   display: inline-flex;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  gap: 14px;
 }
 
 .seg button {
-  min-height: 30px;
-  padding: 0 14px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 0;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid transparent;
 }
 
 .seg button.on {
-  background: #fff;
-  color: #000;
+  color: #fff;
+  border-bottom-color: var(--accent);
+}
+
+.hero-meta {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .hero-amount {
@@ -680,7 +712,7 @@ button.row {
   font-size: 56px;
   font-weight: 300;
   line-height: 1;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.045em;
 }
 
 .hero-sub {
@@ -712,176 +744,12 @@ button.row {
   display: grid;
   grid-template-columns: 1.25fr 1fr 1fr;
   gap: 8px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .hero .shimmer {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
   background-size: 200% 100%;
-}
-
-/* ---------------------------------------------------------------- tiles */
-
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin: 10px 0;
-}
-
-.tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 1px;
-  min-height: 106px;
-  padding: 12px;
-  border-radius: var(--radius-md);
-}
-
-.tile strong {
-  font-size: 21px;
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tile > span:last-child {
-  font-size: 13px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tile-icon {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--ink);
-}
-
-.tile.lavender {
-  background: var(--lavender);
-}
-
-.tile.mint {
-  background: var(--mint);
-}
-
-.tile.lime {
-  background: var(--lime);
-}
-
-/* ------------------------------------------------------------- next up */
-
-.next {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  min-height: 176px;
-  margin: 10px 0;
-  padding: 18px 18px 20px;
-  border-radius: var(--radius);
-  background: linear-gradient(165deg, #e8eff5 0%, #d9e5ee 100%);
-  color: var(--ink);
-  text-align: left;
-  font-weight: 400;
-}
-
-.next-title {
-  max-width: 72%;
-  font-size: 25px;
-  font-weight: 400;
-  line-height: 1.12;
-  letter-spacing: -0.035em;
-}
-
-.next-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-width: 70%;
-}
-
-.next-go {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--ink);
-  color: #fff;
-}
-
-.next-art {
-  position: absolute;
-  z-index: -1;
-  right: 8px;
-  bottom: -6px;
-  height: 104px;
-  filter: drop-shadow(0 8px 14px rgba(11, 11, 12, 0.16));
-}
-
-/* ------------------------------------------------------------- people */
-
-.people-card {
-  padding-bottom: 14px;
-}
-
-.people {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  margin: 8px -18px 0;
-  padding: 2px 18px;
-  scrollbar-width: none;
-}
-
-.people::-webkit-scrollbar {
-  display: none;
-}
-
-.people button {
-  flex-direction: column;
-  gap: 6px;
-  min-height: 0;
-  padding: 0;
-  width: 60px;
-  flex: none;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--ink-2);
-}
-
-.people .avatar {
-  width: 56px;
-  height: 56px;
-}
-
-.people span:last-child {
-  max-width: 60px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ------------------------------------------------------------- activity */
@@ -965,32 +833,48 @@ button.row {
 .tabbar {
   position: fixed;
   left: 50%;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  bottom: calc(12px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 10;
-  display: flex;
-  gap: 4px;
+  width: calc(100% - 24px);
+  max-width: 456px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   padding: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow:
     inset 0 0 0 1px var(--line),
-    0 14px 34px -14px rgba(11, 11, 12, 0.3);
+    0 16px 36px -18px rgba(22, 18, 14, 0.35);
 }
 
 .tabbar button {
-  width: 56px;
-  height: 52px;
-  min-height: 52px;
+  position: relative;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 58px;
   padding: 0;
-  color: var(--ink-2);
+  border-radius: 18px;
+  color: var(--faint);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .tabbar button.on {
-  background: var(--mist);
   color: var(--ink);
+}
+
+.tabbar button.on::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .busy {
@@ -1807,4 +1691,264 @@ button.row {
   button:active {
     transform: none;
   }
+}
+
+/* ================================================================ airmail
+   The envelope stripe, the stamp and the postmark are Loft's only ornament. */
+
+.airmail {
+  position: relative;
+  isolation: isolate;
+  background: var(--surface);
+}
+
+.airmail::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 5px;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--air-red) 0 10px,
+    #fff 10px 15px,
+    var(--air-blue) 15px 25px,
+    #fff 25px 30px
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* The next thing to do, as an airmail envelope. */
+.next {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  width: 100%;
+  min-height: 182px;
+  margin: 12px 0;
+  padding: 20px 18px 18px 20px;
+  border-radius: var(--radius);
+  color: var(--ink);
+  text-align: left;
+  font-weight: 400;
+  align-items: start;
+}
+
+.next-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.next-title {
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+}
+
+.next-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.next .mono-chip {
+  background: var(--surface-2);
+}
+
+.next-post {
+  position: relative;
+  width: 92px;
+  height: 120px;
+}
+
+.next-post .stamp {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: rotate(3deg);
+}
+
+.next-post .postmark {
+  position: absolute;
+  top: 70px;
+  right: 30px;
+  width: 104px;
+  color: rgba(22, 18, 14, 0.5);
+  transform: rotate(-12deg);
+}
+
+.next-go {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: #fff;
+}
+
+.stamp {
+  --r: 3px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 70px;
+  padding: 7px 7px 6px;
+  background: var(--c-soft);
+  box-shadow: inset 0 0 0 1px rgba(22, 18, 14, 0.06);
+  -webkit-mask:
+    radial-gradient(circle var(--r), #0000 96%, #000) calc(-1 * var(--r)) calc(-1 * var(--r)) / 8px 8px round,
+    linear-gradient(#000 0 0) 5px 5px / calc(100% - 10px) calc(100% - 10px) no-repeat;
+  mask:
+    radial-gradient(circle var(--r), #0000 96%, #000) calc(-1 * var(--r)) calc(-1 * var(--r)) / 8px 8px round,
+    linear-gradient(#000 0 0) 5px 5px / calc(100% - 10px) calc(100% - 10px) no-repeat;
+}
+
+.stamp-face {
+  width: 54px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c1) 30%, #fff);
+}
+
+.stamp-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 12%;
+}
+
+.stamp-value {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+}
+
+.postmark text {
+  font-family: var(--mono);
+  font-size: 7.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: currentColor;
+}
+
+/* Family: the people you send to, each with the last thing that moved. */
+.family-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 -16px;
+  padding: 2px 16px 4px;
+  scrollbar-width: none;
+}
+
+.family-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.member {
+  flex: 0 0 92px;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 12px 6px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.member .avatar {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 2px;
+}
+
+.member-name {
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-last {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.member-last.in {
+  color: var(--green);
+}
+
+/* A receipt is a torn-off slip: notched top edge and a postmark. */
+.receipt {
+  position: relative;
+}
+
+.perforated {
+  -webkit-mask: radial-gradient(circle 6px at 50% 0, #0000 96%, #000) 0 0 / 18px 100% repeat-x;
+  mask: radial-gradient(circle 6px at 50% 0, #0000 96%, #000) 0 0 / 18px 100% repeat-x;
+  padding-top: 22px;
+}
+
+.receipt-mark {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  width: 104px;
+  color: rgba(228, 87, 46, 0.55);
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+
+/* A note arrives as a letter. */
+.letter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 20px 22px;
+  border-radius: var(--radius-md);
+}
+
+.letter-text {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+}
+
+/* Serif headlines inside the dark cards. */
+.welcome-hero .display {
+  font-size: 46px;
+  line-height: 0.98;
+}
+
+.form-card h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 32px;
+  letter-spacing: -0.01em;
+}
+
+.compare-row.head > :last-child {
+  color: var(--air-red);
 }

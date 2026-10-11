@@ -10,7 +10,7 @@ import { buildActivity } from "../lib/activity.ts";
 import { ago, cadence, ngn, usd, when } from "../lib/format.ts";
 import { useLoft } from "../state.tsx";
 import type { SentItem } from "../lib/vault.ts";
-import { ErrorLine, Label, Money, TxLink, errorText } from "./ui.tsx";
+import { ErrorLine, Label, Money, Postmark, Stamp, TxLink, errorText, stampDate } from "./ui.tsx";
 
 export function Home() {
   const { vault, balance, rate, orders, config, session, payments, arrivedAt } = useLoft();
@@ -41,15 +41,17 @@ export function Home() {
   return (
     <section className="home">
       <header className="app-head">
+        <div className="hello">
+          <Label>
+            {new Date().toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} ·{" "}
+            {config?.network === "mainnet" ? "Monad" : "Testnet"}
+          </Label>
+          <h1 className="greet">
+            {greeting()}, <em>{vault.name || "you"}</em>
+          </h1>
+        </div>
         <button className="avatar" data-creature={creature} onClick={() => navigate("/me")} aria-label="Your profile">
           <img src={`/cast/${creature}/idle.webp`} alt="" />
-        </button>
-        <div className="hello">
-          <Label>{config?.network === "mainnet" ? "Loft · Monad" : "Loft · Testnet"}</Label>
-          <strong>{vault.name || "You"}</strong>
-        </div>
-        <button className="icon round" onClick={() => navigate("/me")} aria-label="Keys and recovery">
-          <Icon.key size={20} />
         </button>
       </header>
 
@@ -79,6 +81,9 @@ export function Home() {
         <p className="hero-sub dim">
           <Icon.lock size={13} /> Only your passkey can move it
         </p>
+        <p className="hero-meta">
+          Sent {usd(total("out"))} · Received {usd(total("in"))} · 30 days
+        </p>
         <div className="hero-creature" aria-hidden>
           <CreatureSprite kind={creature} pose={pose} size={128} label={`Your ${creature}`} />
         </div>
@@ -95,47 +100,29 @@ export function Home() {
         </div>
       </div>
 
-      <div className="tiles">
-        <div className="tile lavender">
-          <span className="tile-icon">
-            <Icon.send size={15} />
-          </span>
-          <strong>{usd(total("out"))}</strong>
-          <span>Sent · 30d</span>
-        </div>
-        <div className="tile mint">
-          <span className="tile-icon">
-            <Icon.receive size={15} />
-          </span>
-          <strong>{usd(total("in"))}</strong>
-          <span>Received</span>
-        </div>
-        <div className="tile lime">
-          <span className="tile-icon">
-            <Icon.calendar size={15} />
-          </span>
-          <strong>{outgoing.length}</strong>
-          <span>{outgoing.length === 1 ? "Standing order" : "Standing orders"}</span>
-        </div>
-      </div>
-
       <NextUp outgoing={outgoing} />
 
       {config?.kimi && <Ask />}
 
       {vault.contacts.length > 0 && (
-        <div className="card people-card">
-          <div className="card-head">
-            <h3>People</h3>
-            <Label>{vault.contacts.length} saved</Label>
+        <div className="family">
+          <div className="section-head">
+            <h3>Family</h3>
+            <Label>{vault.contacts.length} on Loft</Label>
           </div>
-          <div className="people">
-            {vault.contacts.slice(0, 12).map((c) => (
-              <button key={c.address} onClick={() => navigate(`/send?to=${encodeURIComponent(c.name)}`)}>
-                <CreatureAvatar kind={c.character} name={c.name} />
-                <span>{c.name.replace(/^@/, "")}</span>
-              </button>
-            ))}
+          <div className="family-strip">
+            {vault.contacts.slice(0, 12).map((c) => {
+              const last = activity.find((a) => a.other?.toLowerCase() === c.address.toLowerCase());
+              return (
+                <button key={c.address} className="member" onClick={() => navigate(`/send?to=${encodeURIComponent(c.name)}`)}>
+                  <CreatureAvatar kind={c.character} name={c.name} />
+                  <span className="member-name">{c.name.replace(/^@/, "")}</span>
+                  <span className={`member-last ${last?.dir ?? ""}`}>
+                    {last ? `${last.dir === "in" ? "+" : "−"}${usd(last.amount)}` : "Say hi"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -230,25 +217,35 @@ function NextUp({ outgoing }: { outgoing: OrderInfo[] }) {
     kind = null;
   }
   return (
-    <button className="next" onClick={() => navigate(to)}>
-      <Label>{label}</Label>
-      <span className="next-title">{title}</span>
-      <span className="next-chips">
-        {chips.map((c) => (
-          <span key={c} className="mono-chip">
-            {c}
-          </span>
-        ))}
+    <button className="next airmail" onClick={() => navigate(to)}>
+      <span className="next-body">
+        <Label>Par avion · {label}</Label>
+        <span className="next-title">{title}</span>
+        <span className="next-chips">
+          {chips.map((c) => (
+            <span key={c} className="mono-chip">
+              {c}
+            </span>
+          ))}
+        </span>
+      </span>
+      <span className="next-post">
+        <Stamp kind={kind} value={order ? usd(order.amount) : "$0"} />
+        <Postmark top="Monad" bottom={stampDate()} />
       </span>
       <span className="next-go" aria-hidden>
-        <Icon.arrow size={20} />
+        <Icon.arrow size={18} />
       </span>
-      {isCreature(kind) && <img className="next-art" src={`/cast/${kind}/wave.webp`} alt="" aria-hidden />}
     </button>
   );
 }
 
 const CHEER_MS = 4000;
+
+function greeting() {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : "Evening";
+}
 
 /** "Today", "Yesterday", or a short date: Activity is grouped by the day money moved. */
 function dayLabel(ms: number) {

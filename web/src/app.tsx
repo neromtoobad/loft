@@ -76,8 +76,9 @@ function TabBar({ route }: { route: Route }) {
       {items.map((it) => {
         const Glyph = Icon[it.icon];
         return (
-          <button key={it.to} className={route === it.to ? "on" : ""} aria-label={it.label} aria-current={route === it.to ? "page" : undefined} onClick={() => navigate(it.to)}>
-            <Glyph size={22} />
+          <button key={it.to} className={route === it.to ? "on" : ""} aria-current={route === it.to ? "page" : undefined} onClick={() => navigate(it.to)}>
+            <Glyph size={21} />
+            <span>{it.label}</span>
           </button>
         );
       })}

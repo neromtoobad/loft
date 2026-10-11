@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FEATURED, type Creature, CourierSprite, CreatureAvatar, CreaturePicker } from "../cast.tsx";
 import { useLoft } from "../state.tsx";
-import { ErrorLine, Label, Point, errorText } from "./ui.tsx";
+import { ErrorLine, Label, LoftMark, Point, errorText } from "./ui.tsx";
 
 export function Welcome({ returning }: { returning: boolean }) {
   const { create, unlock, busy } = useLoft();
@@ -23,9 +23,9 @@ export function Welcome({ returning }: { returning: boolean }) {
     <section className="welcome">
       <header className="brand-bar">
         <span className="brand">
-          <LoftMark /> loft
+          <LoftMark /> Loft
         </span>
-        <button className="pill dark small" onClick={() => run(unlock)} disabled={Boolean(busy)}>
+        <button className="link-button" onClick={() => run(unlock)} disabled={Boolean(busy)}>
           {returning ? "Unlock" : "Sign in"}
         </button>
       </header>
@@ -35,7 +35,9 @@ export function Welcome({ returning }: { returning: boolean }) {
           <CourierSprite pose="fly-up" size={150} />
         </div>
         <Label live>Live on Monad · AUSD</Label>
-        <h1 className="display">Send dollars home in one tap.</h1>
+        <h1 className="display">
+          Send dollars home <em>in one tap.</em>
+        </h1>
         <div className="hero-points">
           <Point icon="lock">You hold your money, not us</Point>
           <Point icon="dollar">Family keeps real dollars</Point>
@@ -101,16 +103,6 @@ export function Welcome({ returning }: { returning: boolean }) {
   );
 }
 
-/** The mark: a loft roof over a doorway, drawn to sit beside lowercase type. */
-export function LoftMark() {
-  return (
-    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden>
-      <path d="M3 13.5 14 4l11 9.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7 12v11.5h14V12" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
-      <circle cx="14" cy="15.5" r="2.3" fill="var(--accent)" />
-    </svg>
-  );
-}
 
 /** What changes when the money never leaves your own account. Kept to claims the contracts back up. */
 const DIFFERENCES = [

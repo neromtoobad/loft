@@ -138,7 +138,12 @@ export function Claim() {
           )}
         </div>
       </div>
-      {message?.note && <blockquote className="note">“{message.note}”</blockquote>}
+      {message?.note && (
+        <blockquote className="note airmail letter">
+          <Label>A note from {from}</Label>
+          <span className="letter-text">“{message.note}”</span>
+        </blockquote>
+      )}
       {info && (
         <>
           {info.claimed ? (
