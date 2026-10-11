@@ -373,7 +373,7 @@ function speechRecognition(): (new () => Recognition) | null {
 
 /**
  * Plain-language requests, typed or spoken ("send Mum fifty thousand naira").
- * Kimi reads them into a transfer; nothing moves until the user reviews and
+ * Claude or Kimi reads them into a transfer; nothing moves until the user reviews and
  * confirms it on the send screen with their passkey.
  */
 function Ask() {

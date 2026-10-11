@@ -5,7 +5,7 @@ import { type Context, Hono } from "hono";
 import { type Address, type Hex, formatUnits, getAddress, isAddress, isHex, keccak256, toBytes, verifyMessage } from "viem";
 import { AUTH_HEADER, AUTH_WINDOW_MS, authMessage, decodeAuth } from "../shared/auth.ts";
 import { AUSD_DECIMALS, NETWORKS, type NetworkName, ausdAbi, escrowAbi, lbPairAbi } from "../shared/config.ts";
-import { parseIntent, ruleIntent } from "./intent.ts";
+import { intentEngine, parseIntent, ruleIntent } from "./intent.ts";
 import { corridor, followChain } from "./corridor.ts";
 import { ngnPerUsd } from "./rate.ts";
 import { createRelayer } from "./relayer.ts";
@@ -107,7 +107,8 @@ app.get("/api/config", async (c) => {
     relayer: relayer.address,
     relayerGas: formatUnits(gas, 18),
     explorer: network.chain.blockExplorers?.default.url,
-    kimi: Boolean(process.env.KIMI_API_KEY),
+    /** The model reading plain-language requests, or null for the built-in rules. */
+    ai: intentEngine(),
     indexer: Boolean(process.env.ENVIO_GRAPHQL_URL),
     usdc: network.usdc ?? null,
     convert: network.convert ?? null,
@@ -572,15 +573,16 @@ app.post("/api/intent", async (c) => {
   const b = await c.req.json();
   if (typeof b.text !== "string" || b.text.length > 500) throw new HttpError(400, "text required");
   const contacts = Array.isArray(b.contacts) ? b.contacts.filter((x: unknown) => typeof x === "string").slice(0, 50) : [];
-  // Kimi reads it when configured; the rules cover the common phrasings otherwise, or if Kimi is down.
-  let engine: "kimi" | "rules" = "rules";
+  // A model reads it when one is configured; the rules cover the common phrasings otherwise, or if it's down.
+  const model = intentEngine();
+  let engine: "claude" | "kimi" | "rules" = "rules";
   let intent = ruleIntent(b.text, contacts);
-  if (process.env.KIMI_API_KEY) {
+  if (model) {
     try {
-      intent = await parseIntent(b.text, contacts);
-      engine = "kimi";
+      intent = await parseIntent(b.text, contacts, model);
+      engine = model;
     } catch (err) {
-      console.error("kimi:", (err as Error).message);
+      console.error(`${model}:`, (err as Error).message);
     }
   }
   const rate = await ngnPerUsd().catch(() => undefined);

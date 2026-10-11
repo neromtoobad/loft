@@ -9,7 +9,8 @@ export type AppConfig = {
   relayer: Address;
   relayerGas: string;
   explorer: string;
-  kimi: boolean;
+  /** The model reading plain-language requests, or null for the built-in rules. */
+  ai: "claude" | "kimi" | null;
   indexer: boolean;
   usdc: Address | null;
   convert: Address | null;
@@ -158,8 +159,8 @@ export type ParsedIntent = {
   explanation: string;
   usd: number | null;
   ngnPerUsd: number | null;
-  /** Kimi when it's configured, else the built-in rules. */
-  engine: "kimi" | "rules";
+  /** The model that read it, or the built-in rules. */
+  engine: "claude" | "kimi" | "rules";
 };
 
 export const api = {

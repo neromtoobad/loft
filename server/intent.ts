@@ -1,6 +1,7 @@
 // Turns "send mum 50k every Friday" into a transfer the app can show for
-// confirmation. Kimi only sees the sentence and contact nicknames, never
-// addresses or balances, and nothing executes without the user confirming.
+// confirmation. The model (Claude or Kimi, whichever key is set) only sees the
+// sentence and contact nicknames, never addresses or balances, and nothing
+// executes without the user confirming.
 
 export type Intent = {
   kind: "send" | "schedule" | "unknown";
@@ -28,12 +29,50 @@ Reply with one JSON object only, with these keys:
 - note: a short message to attach if the user included one ("for school fees"), else null.
 - explanation: one short plain-English sentence describing what will happen, for the confirm screen.`;
 
-export async function parseIntent(text: string, contacts: string[]): Promise<Intent> {
-  const apiKey = process.env.KIMI_API_KEY;
-  if (!apiKey) throw new Error("KIMI_API_KEY is not set");
+export type Engine = "claude" | "kimi";
+
+/** Which model reads requests: Claude if its key is set, else Kimi, else none (the rules below). */
+export function intentEngine(): Engine | null {
+  if (process.env.ANTHROPIC_API_KEY) return "claude";
+  if (process.env.KIMI_API_KEY) return "kimi";
+  return null;
+}
+
+function prompt(text: string, contacts: string[]) {
+  return `Today is ${new Date().toDateString()}.\nContacts: ${contacts.length ? contacts.join(", ") : "(none)"}\nRequest: ${text}`;
+}
+
+async function askClaude(text: string, contacts: string[]): Promise<string> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+    },
+    signal: AbortSignal.timeout(30_000),
+    body: JSON.stringify({
+      model: process.env.CLAUDE_MODEL ?? "claude-haiku-5-5",
+      max_tokens: 400,
+      temperature: 0,
+      system: SYSTEM,
+      messages: [{ role: "user", content: prompt(text, contacts) }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const json = await res.json();
+  const out = (json.content ?? []).map((b: { text?: string }) => b.text ?? "").join("");
+  // The reply is one JSON object; take it even if the model wraps it in prose or a fence.
+  const start = out.indexOf("{");
+  const end = out.lastIndexOf("}");
+  if (start < 0 || end < start) throw new Error("Claude didn't return JSON");
+  return out.slice(start, end + 1);
+}
+
+async function askKimi(text: string, contacts: string[]): Promise<string> {
   const res = await fetch(`${process.env.KIMI_BASE_URL ?? "https://api.moonshot.ai/v1"}/chat/completions`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+    headers: { "content-type": "application/json", authorization: `Bearer ${process.env.KIMI_API_KEY}` },
     signal: AbortSignal.timeout(30_000),
     body: JSON.stringify({
       model: process.env.KIMI_MODEL ?? "kimi-k2.6",
@@ -41,16 +80,18 @@ export async function parseIntent(text: string, contacts: string[]): Promise<Int
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: SYSTEM },
-        {
-          role: "user",
-          content: `Today is ${new Date().toDateString()}.\nContacts: ${contacts.length ? contacts.join(", ") : "(none)"}\nRequest: ${text}`,
-        },
+        { role: "user", content: prompt(text, contacts) },
       ],
     }),
   });
   if (!res.ok) throw new Error(`Kimi ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const json = await res.json();
-  const parsed = JSON.parse(json.choices[0].message.content) as Partial<Intent>;
+  return json.choices[0].message.content;
+}
+
+export async function parseIntent(text: string, contacts: string[], engine: Engine): Promise<Intent> {
+  const raw = engine === "claude" ? await askClaude(text, contacts) : await askKimi(text, contacts);
+  const parsed = JSON.parse(raw) as Partial<Intent>;
   return {
     kind: parsed.kind === "send" || parsed.kind === "schedule" ? parsed.kind : "unknown",
     recipient: parsed.recipient ?? null,
