@@ -1,7 +1,9 @@
 # The Loft cast
 
-A pigeon courier carries every payment, and each person picks a creature:
-cheetah, fennec fox, lion or African grey parrot. Generated with Higgsfield
+A pigeon courier carries every payment, and each person picks one of nine
+creatures: cheetah, fennec fox, lion, African grey parrot, pangolin, tortoise,
+hornbill, honey badger or chameleon. The first four are featured on the welcome
+screen; the picker scrolls through all nine. Generated with Higgsfield
 (`nano_banana_pro`, 2k, 3:2, text only), backgrounds removed with Higgsfield's
 background remover, then cut into one WebP per pose by `scripts/slice-cast.ts`
 into `web/public/cast/`. `art/concepts/lineup-v1.jpg` is the concept lineup the
@@ -33,6 +35,11 @@ characters into the sheet as ghosts.
 | fennec | fennec fox kit, huge pink-lined ears, sandy fur, coral bandana, cheeky | idle, wave (winking), catch, cheer, wait (sitting on its tail), worried |
 | lion | lion cub with an oversized golden-brown mane, gold chain with a coin pendant | idle, wave, catch, cheer (happy roar), wait (arms folded), worried (hugging its tail) |
 | parrot | round African grey parrot, red tail, teal headphones | idle, wave (one wing), catch, cheer (wings spread, mid-squawk), wait (fluffed up), worried |
+| pangolin | baby pangolin, glossy bronze-copper scales, cream belly, terracotta knitted scarf | idle, wave, catch, cheer, wait (chin in paws), worried (curled half into a ball) |
+| tortoise | young tortoise, amber shell with an indigo adire pattern, olive skin, round gold spectacles | idle, wave, catch, cheer, wait (half in its shell), worried |
+| hornbill | round hornbill, black and cream feathers, golden-orange bill and casque, bead necklace | idle, wave, catch, cheer, wait (fluffed up), worried |
+| badger | honey badger cub, silver-white head stripe, aviator sunglasses | idle (arms folded), wave, catch (diving), cheer (flexing), wait (shades on), worried |
+| chameleon | rainbow-gradient chameleon, curled tail, huge eyes | idle, wave, catch (with its tongue), cheer (glowing brighter), wait, worried (faded to grey) |
 
 ## What drives each pose (nothing is decorative)
 
@@ -54,3 +61,5 @@ characters into the sheet as ghosts.
 | 2026-10-11 | Cheetah 3D style test (kept) | 2 |
 | 2026-10-11 | Fennec, lion, parrot, pigeon sheets | 8 |
 | 2026-10-11 | Background removal, five sheets | (charged by Higgsfield) |
+| 2026-10-11 | Pangolin, tortoise, hornbill (back, now in 3D), honey badger, chameleon | 10 |
+| 2026-10-11 | Background removal, five more sheets | (charged by Higgsfield) |

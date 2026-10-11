@@ -4,7 +4,7 @@
 // creature's mood comes from real balances.
 import { useEffect, useRef, useState } from "react";
 
-export const CREATURES = ["cheetah", "fennec", "lion", "parrot"] as const;
+export const CREATURES = ["cheetah", "fennec", "lion", "parrot", "pangolin", "tortoise", "hornbill", "badger", "chameleon"] as const;
 export type Creature = (typeof CREATURES)[number];
 export type Pose = "idle" | "wave" | "catch" | "cheer" | "wait" | "worried";
 export type CourierPose = "fly-up" | "fly-down" | "perch" | "handoff" | "salute" | "sleep";
@@ -14,7 +14,15 @@ export const CREATURE_NAMES: Record<Creature, string> = {
   fennec: "Fennec",
   lion: "Lion",
   parrot: "Parrot",
+  pangolin: "Pangolin",
+  tortoise: "Tortoise",
+  hornbill: "Hornbill",
+  badger: "Badger",
+  chameleon: "Chameleon",
 };
+
+/** The four on the welcome screen; everyone else is a swipe away in the picker. */
+export const FEATURED: readonly Creature[] = ["cheetah", "fennec", "lion", "parrot"];
 
 export function isCreature(v: unknown): v is Creature {
   return typeof v === "string" && (CREATURES as readonly string[]).includes(v);

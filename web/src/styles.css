@@ -1722,3 +1722,66 @@ button.row {
     animation: none;
   }
 }
+
+[data-creature="pangolin"] {
+  --c1: #f2c08b;
+  --c2: #c46a2b;
+  --c-soft: #fbf0e4;
+  --c-ink: #8a4515;
+}
+
+[data-creature="tortoise"] {
+  --c1: #9be07a;
+  --c2: #2f9e5b;
+  --c-soft: #ebf8e6;
+  --c-ink: #1e6b3d;
+}
+
+[data-creature="hornbill"] {
+  --c1: #c4b2ff;
+  --c2: #6c4ce0;
+  --c-soft: #f1edff;
+  --c-ink: #4a33a8;
+}
+
+[data-creature="badger"] {
+  --c1: #cfd8e3;
+  --c2: #475569;
+  --c-soft: #f1f4f8;
+  --c-ink: #334155;
+}
+
+[data-creature="chameleon"] {
+  --c1: #ff9ad5;
+  --c2: #8b5cf6;
+  --c-soft: #f8eeff;
+  --c-ink: #6d28d9;
+}
+
+/* Nine creatures: one swipeable row that snaps card by card, with a fade at
+   the edge so it reads as "there's more". */
+.picker {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  margin: 8px -16px 4px;
+  scroll-padding-inline: 16px;
+  padding: 4px 16px 6px;
+  -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+
+.picker::-webkit-scrollbar {
+  display: none;
+}
+
+.pick {
+  flex: 0 0 82px;
+  scroll-snap-align: start;
+}
+
+.pick span {
+  font-size: 13px;
+}

@@ -292,7 +292,7 @@ app.get("/api/activity/:address", async (c) => {
 // ------------------------------------------------------ profiles and notes
 
 /** The creatures a person can choose (web/public/cast). */
-const CHARACTERS = new Set(["cheetah", "fennec", "lion", "parrot"]);
+const CHARACTERS = new Set(["cheetah", "fennec", "lion", "parrot", "pangolin", "tortoise", "hornbill", "badger", "chameleon"]);
 
 app.get("/api/profiles/:address", (c) => {
   const p = store.getProfile(addr(c.req.param("address"), "address"));

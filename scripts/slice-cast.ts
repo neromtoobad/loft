@@ -15,6 +15,11 @@ const POSES: Record<string, string[]> = {
   fennec: ["idle", "wave", "catch", "cheer", "wait", "worried"],
   lion: ["idle", "wave", "catch", "cheer", "wait", "worried"],
   parrot: ["idle", "wave", "catch", "cheer", "wait", "worried"],
+  pangolin: ["idle", "wave", "catch", "cheer", "wait", "worried"],
+  tortoise: ["idle", "wave", "catch", "cheer", "wait", "worried"],
+  hornbill: ["idle", "wave", "catch", "cheer", "wait", "worried"],
+  badger: ["idle", "wave", "catch", "cheer", "wait", "worried"],
+  chameleon: ["idle", "wave", "catch", "cheer", "wait", "worried"],
 };
 const ROWS = 2;
 const COLS = 3;
@@ -22,7 +27,9 @@ const KEEP = 0.03; // components under 3% of the pose's main shape are labels or
 const PAD = 16;
 const HEIGHT = 480; // sprite height in the app, before devicePixelRatio
 
+const only = process.argv.slice(2);
 for (const [name, poses] of Object.entries(POSES)) {
+  if (only.length && !only.includes(name)) continue;
   const src = `art/sheets/cut/${name}.png`;
   const { data, info } = await sharp(src).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h, channels } = info;

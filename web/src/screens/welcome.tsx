@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CREATURES, type Creature, CourierSprite, CreaturePicker, CreatureSprite, Skyline } from "../cast.tsx";
+import { FEATURED, type Creature, CourierSprite, CreaturePicker, CreatureSprite, Skyline } from "../cast.tsx";
 import { useLoft } from "../state.tsx";
 import { ErrorLine, errorText } from "./ui.tsx";
 
@@ -25,7 +25,7 @@ export function Welcome({ returning }: { returning: boolean }) {
         <Skyline />
         <CourierSprite pose="fly-up" size={132} />
         <div className="stage">
-          {CREATURES.map((c) => (
+          {FEATURED.map((c) => (
             <CreatureSprite key={c} kind={c} pose="idle" size={78} />
           ))}
         </div>
