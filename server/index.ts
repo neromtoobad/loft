@@ -292,7 +292,7 @@ app.get("/api/activity/:address", async (c) => {
 // ------------------------------------------------------ profiles and notes
 
 /** The creatures a person can choose (web/public/cast). */
-const CHARACTERS = new Set(["pangolin", "tortoise", "hornbill"]);
+const CHARACTERS = new Set(["cheetah", "fennec", "lion", "parrot"]);
 
 app.get("/api/profiles/:address", (c) => {
   const p = store.getProfile(addr(c.req.param("address"), "address"));
@@ -367,9 +367,13 @@ app.post("/api/intent", async (c) => {
 app.get("/.well-known/assetlinks.json", (c) =>
   c.json(existsSync("web/assetlinks.json") ? JSON.parse(readFileSync("web/assetlinks.json", "utf8")) : []),
 );
-app.use("/*", serveStatic({ root: "./web/dist" }));
+// Hashed bundles never change, so they cache forever. The app shell and the
+// cast sprites must be re-checked, or a phone keeps running the last deploy.
+const cacheFor = (path: string) =>
+  path.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache";
+app.use("/*", serveStatic({ root: "./web/dist", onFound: (path, c) => c.header("Cache-Control", cacheFor(path.replace(/^\.?\/?web\/dist/, ""))) }));
 // Client-side routes (/c for claim links, /send, ...) all load the app shell.
-app.get("*", serveStatic({ path: "./web/dist/index.html" }));
+app.get("*", serveStatic({ path: "./web/dist/index.html", onFound: (_p, c) => c.header("Cache-Control", "no-cache") }));
 
 const port = Number(process.env.PORT ?? 8787);
 serve({ fetch: app.fetch, port }, () => {

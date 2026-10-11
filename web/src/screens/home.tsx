@@ -28,7 +28,7 @@ export function Home() {
   const outgoing = orders.filter((o) => o.active && o.sender.toLowerCase() === me);
 
   const activity = buildActivity(vault, session.account.address, payments);
-  const creature: Creature = isCreature(vault.character) ? vault.character : "pangolin";
+  const creature: Creature = isCreature(vault.character) ? vault.character : "cheetah";
   const pose = moodFor(balance, orders, me, arrivedAt);
 
   const character = (address?: string) =>

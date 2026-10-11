@@ -10,3 +10,6 @@ data/
 data-local/
 art/sheets/*.png
 art/sheets/cut/
+art/sheets/v2/
+art/sheets/old/
+art/concepts/*.png

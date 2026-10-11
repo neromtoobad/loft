@@ -4,15 +4,16 @@
 // creature's mood comes from real balances.
 import { useEffect, useRef, useState } from "react";
 
-export const CREATURES = ["pangolin", "tortoise", "hornbill"] as const;
+export const CREATURES = ["cheetah", "fennec", "lion", "parrot"] as const;
 export type Creature = (typeof CREATURES)[number];
 export type Pose = "idle" | "wave" | "catch" | "cheer" | "wait" | "worried";
 export type CourierPose = "fly-up" | "fly-down" | "perch" | "handoff" | "salute" | "sleep";
 
 export const CREATURE_NAMES: Record<Creature, string> = {
-  pangolin: "Pangolin",
-  tortoise: "Tortoise",
-  hornbill: "Hornbill",
+  cheetah: "Cheetah",
+  fennec: "Fennec",
+  lion: "Lion",
+  parrot: "Parrot",
 };
 
 export function isCreature(v: unknown): v is Creature {
@@ -154,7 +155,7 @@ export function CreaturePicker({ value, onChange }: { value: Creature | null; on
           className={`pick ${value === c ? "on" : ""}`}
           onClick={() => onChange(c)}
         >
-          <CreatureSprite kind={c} pose={value === c ? "wave" : "idle"} size={96} />
+          <CreatureSprite kind={c} pose={value === c ? "wave" : "idle"} size={84} />
           <span>{CREATURE_NAMES[c]}</span>
         </button>
       ))}

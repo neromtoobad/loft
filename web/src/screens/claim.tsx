@@ -77,7 +77,7 @@ export function Claim() {
   }
 
   const dollars = info ? fromUnits(info.amount) : 0;
-  const mine: Creature = isCreature(vault?.character) ? vault.character : (creature ?? "pangolin");
+  const mine: Creature = isCreature(vault?.character) ? vault.character : (creature ?? "cheetah");
   const theirs: Creature | null = isCreature(info?.senderCharacter) ? info.senderCharacter : null;
 
   if (done) {

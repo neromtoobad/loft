@@ -72,7 +72,7 @@ export function Send() {
   if (flight) {
     return (
       <Done
-        from={isCreature(vault.character) ? vault.character : "pangolin"}
+        from={isCreature(vault.character) ? vault.character : "cheetah"}
         flight={flight}
         done={done}
         amount={usdAmount}
