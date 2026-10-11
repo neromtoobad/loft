@@ -54,7 +54,6 @@ async function askClaude(text: string, contacts: string[]): Promise<string> {
     body: JSON.stringify({
       model: process.env.CLAUDE_MODEL ?? "claude-haiku-5-5",
       max_tokens: 400,
-      temperature: 0,
       system: SYSTEM,
       messages: [{ role: "user", content: prompt(text, contacts) }],
     }),
