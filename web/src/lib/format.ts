@@ -38,3 +38,10 @@ export function cadence(period: number) {
 export function seconds(ms: number) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
+
+/** "$1,234" and ".56" apart, so the cents can sit quieter than the dollars. */
+export function usdParts(amount: number): readonly [string, string] {
+  const s = usdFmt.format(amount);
+  const i = s.lastIndexOf(".");
+  return i < 0 ? [s, ""] : [s.slice(0, i), s.slice(i)];
+}

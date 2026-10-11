@@ -68,6 +68,33 @@ export const Icon = {
       <path d="M5 12h14M13 6l6 6-6 6" />
     </Svg>
   ),
+  key: (p: { size?: number }) => (
+    <Svg {...p}>
+      <circle cx="8" cy="15" r="4" />
+      <path d="m11 12 8-8M16 7l2 2M14 9l2 2" />
+    </Svg>
+  ),
+  dollar: (p: { size?: number }) => (
+    <Svg {...p}>
+      <path d="M12 3v18M16.5 7.5c-.8-1.3-2.4-2-4.5-2-2.6 0-4.3 1.2-4.3 3.1 0 4.3 9.1 2.4 9.1 6.8 0 1.9-1.9 3.1-4.8 3.1-2.2 0-3.9-.8-4.8-2.2" />
+    </Svg>
+  ),
+  phone: (p: { size?: number }) => (
+    <Svg {...p}>
+      <rect x="7" y="3" width="10" height="18" rx="2.5" />
+      <path d="M11 17.5h2" />
+    </Svg>
+  ),
+  chevron: (p: { size?: number }) => (
+    <Svg {...p}>
+      <path d="m9 6 6 6-6 6" />
+    </Svg>
+  ),
+  check: (p: { size?: number }) => (
+    <Svg {...p}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Svg>
+  ),
   lock: (p: { size?: number }) => (
     <Svg {...p}>
       <rect x="5" y="10.5" width="14" height="10" rx="2.5" />

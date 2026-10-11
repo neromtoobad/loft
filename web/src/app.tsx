@@ -67,26 +67,20 @@ export function App() {
 function TabBar({ route }: { route: Route }) {
   const items: { to: Route; label: string; icon: keyof typeof Icon }[] = [
     { to: "/", label: "Home", icon: "home" },
+    { to: "/send", label: "Send", icon: "send" },
     { to: "/schedule", label: "Schedule", icon: "calendar" },
-    { to: "/add", label: "Add", icon: "plus" },
     { to: "/me", label: "You", icon: "user" },
   ];
-  const tab = (it: (typeof items)[number]) => {
-    const Glyph = Icon[it.icon];
-    return (
-      <button key={it.to} className={route === it.to ? "on" : ""} aria-current={route === it.to ? "page" : undefined} onClick={() => navigate(it.to)}>
-        <Glyph size={22} />
-        {it.label}
-      </button>
-    );
-  };
   return (
     <nav className="tabbar" aria-label="Main">
-      {items.slice(0, 2).map(tab)}
-      <button className="fab" aria-label="Send money" onClick={() => navigate("/send")}>
-        <Icon.send size={26} />
-      </button>
-      {items.slice(2).map(tab)}
+      {items.map((it) => {
+        const Glyph = Icon[it.icon];
+        return (
+          <button key={it.to} className={route === it.to ? "on" : ""} aria-label={it.label} aria-current={route === it.to ? "page" : undefined} onClick={() => navigate(it.to)}>
+            <Glyph size={22} />
+          </button>
+        );
+      })}
     </nav>
   );
 }

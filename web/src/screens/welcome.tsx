@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { FEATURED, type Creature, CourierSprite, CreaturePicker, CreatureSprite, Skyline } from "../cast.tsx";
+import { FEATURED, type Creature, CourierSprite, CreatureAvatar, CreaturePicker } from "../cast.tsx";
 import { useLoft } from "../state.tsx";
-import { ErrorLine, errorText } from "./ui.tsx";
+import { ErrorLine, Label, Point, errorText } from "./ui.tsx";
 
 export function Welcome({ returning }: { returning: boolean }) {
   const { create, unlock, busy } = useLoft();
@@ -21,71 +21,94 @@ export function Welcome({ returning }: { returning: boolean }) {
 
   return (
     <section className="welcome">
-      <div className="welcome-hero sky" aria-hidden>
-        <Skyline />
-        <CourierSprite pose="fly-up" size={132} />
-        <div className="stage">
-          {FEATURED.map((c) => (
-            <CreatureSprite key={c} kind={c} pose="idle" size={78} />
-          ))}
+      <header className="brand-bar">
+        <span className="brand">
+          <LoftMark /> loft
+        </span>
+        <button className="pill dark small" onClick={() => run(unlock)} disabled={Boolean(busy)}>
+          {returning ? "Unlock" : "Sign in"}
+        </button>
+      </header>
+
+      <div className="hero welcome-hero" aria-label="Loft">
+        <div className="welcome-courier" aria-hidden>
+          <CourierSprite pose="fly-up" size={150} />
         </div>
-      </div>
-      <h1 className="display">
-        Send dollars home
-        <br />
-        in one tap.
-      </h1>
-      <p className="lede">Real dollars to family abroad, in about a second. Your face or fingerprint is the only key you need.</p>
-      <div className="trust">
-        <span>You hold your money</span>
-        <span>Family keeps dollars</span>
-        <span>No bank needed to receive</span>
+        <Label live>Live on Monad · AUSD</Label>
+        <h1 className="display">Send dollars home in one tap.</h1>
+        <div className="hero-points">
+          <Point icon="lock">You hold your money, not us</Point>
+          <Point icon="dollar">Family keeps real dollars</Point>
+          <Point icon="phone">No bank or app needed to receive</Point>
+        </div>
+        <div className="faces">
+          <span className="stack-avatars" aria-hidden>
+            {FEATURED.map((c) => (
+              <CreatureAvatar key={c} kind={c} name={c} />
+            ))}
+          </span>
+          <span>For families in Lagos, London, Houston and everywhere between</span>
+        </div>
       </div>
 
-      {mode === "create" ? (
-        <form
-          className="stack"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim() && creature) run(() => create(name.trim(), creature));
-          }}
-        >
-          <label className="field">
-            <span>What should we call you?</span>
-            <input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your first name"
-              autoComplete="given-name"
-              maxLength={40}
-            />
-          </label>
-          <span className="field-label">Pick your creature</span>
-          <CreaturePicker value={creature} onChange={setCreature} />
-          <button className="primary" disabled={!name.trim() || !creature || Boolean(busy)}>
-            Create with passkey
-          </button>
-          <button type="button" className="ghost" onClick={() => setMode("start")}>
-            Back
-          </button>
-        </form>
-      ) : (
-        <div className="stack">
-          <button className="primary" onClick={() => setMode("create")} disabled={Boolean(busy)}>
-            Create my Loft
-          </button>
-          <button className="secondary" onClick={() => run(unlock)} disabled={Boolean(busy)}>
-            {returning ? "Unlock" : "I already have one"}
-          </button>
-        </div>
-      )}
-      <ErrorLine error={error} />
+      <div className="card form-card">
+        <Label>Get started</Label>
+        <h2>{mode === "create" ? "Create your Loft" : "One passkey. That's the account."}</h2>
+        <p className="muted">No seed phrase, no password, no app store. Your face or fingerprint is the only key.</p>
+        {mode === "create" ? (
+          <form
+            className="stack"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (name.trim() && creature) run(() => create(name.trim(), creature));
+            }}
+          >
+            <label className="field">
+              <span>What should we call you?</span>
+              <input
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your first name"
+                autoComplete="given-name"
+                maxLength={40}
+              />
+            </label>
+            <span className="field-label">Pick your creature</span>
+            <CreaturePicker value={creature} onChange={setCreature} />
+            <button className="primary big" disabled={!name.trim() || !creature || Boolean(busy)}>
+              Create with passkey
+            </button>
+            <button type="button" className="ghost" onClick={() => setMode("start")}>
+              Back
+            </button>
+          </form>
+        ) : (
+          <div className="stack">
+            <button className="primary big" onClick={() => setMode("create")} disabled={Boolean(busy)}>
+              Create my Loft
+            </button>
+            <button className="secondary big" onClick={() => run(unlock)} disabled={Boolean(busy)}>
+              {returning ? "Unlock" : "I already have one"}
+            </button>
+          </div>
+        )}
+        <ErrorLine error={error} />
+      </div>
       {mode === "start" && <Compare />}
-      <p className="fineprint">
-        Loft sends Agora dollars (AUSD) on Monad. Your passkey stays on your phone, and we never hold your money.
-      </p>
+      <p className="fineprint center">Agora dollars (AUSD) on Monad · passkeys by Mera · unaudited, use small amounts</p>
     </section>
+  );
+}
+
+/** The mark: a loft roof over a doorway, drawn to sit beside lowercase type. */
+export function LoftMark() {
+  return (
+    <svg viewBox="0 0 28 28" width="24" height="24" aria-hidden>
+      <path d="M3 13.5 14 4l11 9.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 12v11.5h14V12" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
+      <circle cx="14" cy="15.5" r="2.3" fill="var(--accent)" />
+    </svg>
   );
 }
 

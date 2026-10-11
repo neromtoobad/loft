@@ -7,9 +7,9 @@ import { ngn, seconds, short, usd } from "../lib/format.ts";
 import { PROMPT_FREE_LIMIT_USD } from "../lib/keys.ts";
 import type { Contact } from "../lib/vault.ts";
 import { useLoft } from "../state.tsx";
-import { type Creature, Confetti, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
+import { type Creature, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
 import { Icon } from "../icons.tsx";
-import { Assure, ErrorLine, TopBar, TxLink, errorText } from "./ui.tsx";
+import { Assure, ErrorLine, Label, Money, TopBar, TxLink, errorText } from "./ui.tsx";
 
 type Target = { kind: "contact"; contact: Contact } | { kind: "link"; label: string };
 
@@ -132,7 +132,7 @@ export function Send() {
         </div>
 
         <div className="leg">
-          <span className="leg-label">{recipientName} gets</span>
+          <span className="leg-label">{target ? `${recipientName} gets` : "They get"}</span>
           <div className="leg-row">
             <span className="leg-value">{valid || n ? usd(usdAmount).replace("$", "") : "0"}</span>
             <span className="ccy">
@@ -253,42 +253,51 @@ function Done({
   const message = `I sent you ${usd(amount)} on Loft. Tap to receive it: ${url}`;
   return (
     <section className="done">
-      {done && !url && <Confetti />}
+      <div className="status-line">
+        <Label live={!done}>{!done ? "In flight · Monad" : url ? "Held in escrow · Monad" : `Confirmed · ${seconds(done.ms)}`}</Label>
+      </div>
       <Delivery from={from} to={flight.to} toRoof={flight.toRoof} confirmed={Boolean(done)} />
       <h2 className="display">
-        {!done ? `On its way to ${flight.name}…` : url ? "Waiting on their roof" : `${flight.name} has it`}
+        {!done ? `On its way to ${flight.name}` : url ? "Waiting on their roof" : `${flight.name} has it`}
       </h2>
       {!done ? (
         <p className="lede">Your courier lands the moment Monad confirms.</p>
       ) : url ? (
         <>
           <p className="lede">
-            Your courier is holding {usd(amount)} on their roof. Send them the link and it hands it over when they tap. Only share it with
-            them. It flies back to you after 14 days if nobody opens it.
+            {usd(amount)} is held for them until they tap the link. Only share it with them. It comes back to you after 14 days if nobody
+            opens it.
           </p>
           <Assure>It waits in a Monad contract, not with Loft. Only this link can open it.</Assure>
           <div className="stack">
-            <a className="primary" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
+            <a className="primary big" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
               Share on WhatsApp
             </a>
-            {"share" in navigator && (
-              <button className="secondary" onClick={() => navigator.share({ text: message }).catch(() => {})}>
-                Share another way
+            <div className="inline even">
+              {"share" in navigator && (
+                <button className="secondary" onClick={() => navigator.share({ text: message }).catch(() => {})}>
+                  Share
+                </button>
+              )}
+              <button className="secondary" onClick={() => navigator.clipboard?.writeText(url ?? "")}>
+                Copy link
               </button>
-            )}
-            <button className="ghost" onClick={() => navigator.clipboard?.writeText(url ?? "")}>
-              Copy link
-            </button>
+            </div>
           </div>
         </>
       ) : (
-        <p className="lede">
-          {usd(amount)} arrived. Confirmed on Monad in {seconds(done.ms)}.
-        </p>
+        <>
+          <p className="lede">
+            <Money value={amount} /> arrived in {flight.name}'s own account. Only their passkey can move it.
+          </p>
+        </>
       )}
-      {done && !url && <Assure>It's in {flight.name}'s own account now. Only their passkey can move it.</Assure>}
       {done && (
         <div className="card receipt">
+          <div className="card-head">
+            <h3>Receipt</h3>
+            <Label>{url ? "Link" : "Direct"}</Label>
+          </div>
           <div className="row">
             <span>To</span>
             <strong>{flight.name}</strong>
@@ -317,7 +326,7 @@ function Done({
         </div>
       )}
       {done && (
-        <button className={url ? "ghost" : "primary big"} onClick={() => navigate("/")}>
+        <button className={url ? "ghost big" : "primary big"} onClick={() => navigate("/")}>
           Done
         </button>
       )}

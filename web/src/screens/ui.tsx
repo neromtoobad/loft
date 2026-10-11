@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { navigate } from "../app.tsx";
 import { Icon } from "../icons.tsx";
 import { ApiError } from "../lib/api.ts";
+import { ngn, usdParts } from "../lib/format.ts";
 
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return e.message;
@@ -53,5 +54,40 @@ export function TxLink({ hash, explorer }: { hash: string; explorer?: string }) 
     <a className="txlink" href={`${explorer}/tx/${hash}`} target="_blank" rel="noreferrer">
       View on Monad ↗
     </a>
+  );
+}
+
+/** A money figure with quiet cents: $150<.00>. Naira has no cents to quiet. */
+export function Money({ value, currency = "USD" }: { value: number; currency?: "USD" | "NGN" }) {
+  if (currency === "NGN") return <span className="money">{ngn(value)}</span>;
+  const [whole, cents] = usdParts(value);
+  return (
+    <span className="money">
+      {whole}
+      <span className="cents">{cents}</span>
+    </span>
+  );
+}
+
+/** Small uppercase monospace label, the way the screen names its parts. */
+export function Label({ children, live = false }: { children: ReactNode; live?: boolean }) {
+  return (
+    <span className="label">
+      {live && <span className="dot-live" aria-hidden />}
+      {children}
+    </span>
+  );
+}
+
+/** One reassurance with its icon, for the short lists that say who holds the money. */
+export function Point({ icon, children }: { icon: "lock" | "check" | "phone" | "dollar" | "calendar"; children: ReactNode }) {
+  const Glyph = Icon[icon];
+  return (
+    <p className="point">
+      <span className="point-icon">
+        <Glyph size={15} />
+      </span>
+      <span>{children}</span>
+    </p>
   );
 }
