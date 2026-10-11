@@ -8,6 +8,8 @@ Built for [Monad Metropolis](https://monad.xyz/developers/hackathons/metropolis)
 
 > **Live on Monad mainnet:** https://loft.nerom.site · escrow [`0xc2da029bd912516c2046fc928829f63749e6d275`](https://monadvision.com/address/0xc2da029bd912516c2046fc928829f63749e6d275). Unaudited: use small amounts.
 
+**It's a web app.** There's no app store download: open https://loft.nerom.site on a phone and add it to the Home Screen (iPhone: Share → Add to Home Screen; Android: ⋮ → Install app, or the Install button Loft shows). It then opens full-screen like any app, and the same passkey signs in. On a computer, Loft shows a QR code to open it on your phone.
+
 ## The problem
 
 Sending $50 from London or Houston to a mother in Lagos still means a remittance counter, a bank account on both ends, days of waiting, and fees that eat into small amounts. Crypto rails are fast, but they ask the person receiving to install a wallet, write down twelve words, and buy gas before she can touch the money. Most people's mothers will not do that, and they shouldn't have to.

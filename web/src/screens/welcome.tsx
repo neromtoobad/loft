@@ -2,6 +2,7 @@ import { useState } from "react";
 import { navigate } from "../app.tsx";
 import { FEATURED, type Creature, CourierSprite, CreatureAvatar, CreaturePicker } from "../cast.tsx";
 import { useLoft } from "../state.tsx";
+import { InstallCard } from "./install.tsx";
 import { ErrorLine, Label, LoftMark, Point, errorText } from "./ui.tsx";
 
 export function Welcome({ returning }: { returning: boolean }) {
@@ -98,6 +99,7 @@ export function Welcome({ returning }: { returning: boolean }) {
         )}
         <ErrorLine error={error} />
       </div>
+      {mode === "start" && <InstallCard where="welcome" />}
       {mode === "start" && <Compare />}
       <p className="fineprint center">
         Agora dollars (AUSD) on Monad · passkeys by Mera · unaudited, use small amounts ·{" "}

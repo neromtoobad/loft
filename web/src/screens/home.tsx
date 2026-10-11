@@ -11,6 +11,7 @@ import { ago, cadence, ngn, usd, when } from "../lib/format.ts";
 import { useLoft } from "../state.tsx";
 import type { SentItem } from "../lib/vault.ts";
 import { UsdcWaiting } from "./add.tsx";
+import { InstallCard } from "./install.tsx";
 import { ErrorLine, Label, Money, Postmark, Stamp, TxLink, errorText, stampDate } from "./ui.tsx";
 
 export function Home() {
@@ -130,6 +131,8 @@ export function Home() {
       </div>
 
       <Ask />
+
+      <InstallCard where="home" />
 
       {vault.contacts.length > 0 && (
         <div className="family">

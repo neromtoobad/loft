@@ -5,6 +5,7 @@ import { short, usd } from "../lib/format.ts";
 import { useLoft } from "../state.tsx";
 import { CreaturePicker, isCreature } from "../cast.tsx";
 import { ErrorLine, TopBar, errorText } from "./ui.tsx";
+import { InstallCard } from "./install.tsx";
 
 export function Me() {
   const { vault, session, config, setHandle, setCharacter, lock } = useLoft();
@@ -82,6 +83,7 @@ export function Me() {
       </div>
 
       <ErrorLine error={error} />
+      <InstallCard where="me" />
       <button className="secondary" onClick={() => navigate("/corridor")}>
         The corridor: live London → Lagos stats
       </button>
