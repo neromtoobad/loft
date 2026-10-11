@@ -6,7 +6,7 @@
 
 Built for [Monad Metropolis](https://monad.xyz/developers/hackathons/metropolis), Track 02: Consumer Products & Payments.
 
-> Status: working end to end on a local fork of Monad testnet against Agora's real AUSD contract. Mainnet deployment is next. See [Status](#status).
+> **Live on Monad mainnet:** https://loft-production-09f6.up.railway.app · escrow [`0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90`](https://monadvision.com/address/0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90). Unaudited: use small amounts.
 
 ## The problem
 
@@ -107,7 +107,6 @@ Done and tested:
 - Web app: onboarding, unlock (including with no local state), send by link or directly, claim, encrypted notes and vault, re-share or take back a link, standing orders.
 
 Next:
-- Mainnet deployment and a public URL
 - Deploy the CRE workflow and host the Envio indexer
 - Aurora Intents deposits
 - Android wrapper (Trusted Web Activity)
