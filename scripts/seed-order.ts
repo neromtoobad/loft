@@ -27,7 +27,7 @@ const sender = privateKeyToAccount(generatePrivateKey());
 await fetch("http://localhost:8546/faucet", { method: "POST", body: JSON.stringify({ address: sender.address, usd: 50 }) });
 const now = Number((await pc.getBlock()).timestamp);
 const signed = await signOrder(sender, { chainId: 10143, ausd: "0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC", escrow: ESCROW }, {
-  recipient: MUM, amount: toUnits(10), budget: toUnits(30), firstDue: now - 60, period: 7 * 86400, mode: 0,
+  recipient: MUM, amount: toUnits(10), budget: toUnits(30), firstDue: now - 60, period: 7 * 86400, mode: 0, minRate: 0n,
 });
 const res = await fetch("http://localhost:8788/api/relay/order", {
   method: "POST", headers: { "content-type": "application/json" },

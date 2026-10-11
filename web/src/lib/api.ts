@@ -62,12 +62,41 @@ export type OrderInfo = {
   nextDue: number;
   period: number;
   mode: "fixed" | "topup";
+  /** NGN per USD the rate must reach before a payment goes; 0 for none. */
+  minRate: number;
   active: boolean;
+};
+
+export type PersonRef = { address: Address; handle: string | null; character: string | null; name?: string | null };
+
+export type PotInfo = {
+  id: number;
+  title: string;
+  beneficiary: PersonRef;
+  organizer: PersonRef;
+  target: string;
+  raised: string;
+  deadline: number;
+  released: boolean;
+  txHash: string | null;
+  contributions: { from: Address; name: string; amount: string; txHash: Hex; at: number; character: string | null }[];
+};
+
+export type RequestInfo = {
+  id: string;
+  requester: Address;
+  name: string;
+  handle: string | null;
+  character: string | null;
+  amount: string;
+  note: string;
+  createdAt: number;
+  paid: { by: Address; txHash: Hex; at: number; name: string | null } | null;
 };
 
 export type IndexedPayment = {
   id: string;
-  kind: "DIRECT" | "LINK" | "ORDER";
+  kind: "DIRECT" | "LINK" | "ORDER" | "POT";
   from_id: Address;
   to_id: Address;
   amount: string;
@@ -108,6 +137,16 @@ export const api = {
   claim: (body: object) => call<TxResult>("POST", "/api/relay/claim", body),
   createOrder: (body: object) => call<TxResult>("POST", "/api/relay/order", body),
   closeOrder: (body: object) => call<TxResult>("POST", "/api/relay/close", body),
+
+  createPot: (body: object) => call<TxResult & { potId: number }>("POST", "/api/relay/pot", body),
+  pot: (id: number) => call<PotInfo>("GET", `/api/pots/${id}`),
+  pots: (address: Address) => call<PotInfo[]>("GET", `/api/pots?address=${address}`),
+  contribute: (body: object) => call<TxResult & { released: boolean }>("POST", "/api/relay/contribute", body),
+
+  createRequest: (account: LocalAccount, body: { amount: string; note: string; name: string }) =>
+    call<{ id: string }>("POST", "/api/requests", body, account),
+  request: (id: string) => call<RequestInfo>("GET", `/api/requests/${encodeURIComponent(id)}`),
+  requests: (address: Address) => call<RequestInfo[]>("GET", `/api/requests?address=${address}`),
 
   profile: (address: Address) => call<Profile>("GET", `/api/profiles/${address}`),
   handle: (handle: string) => call<Profile>("GET", `/api/handles/${encodeURIComponent(handle)}`),

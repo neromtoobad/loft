@@ -18,6 +18,7 @@ async function totals(context: Ctx): Promise<Totals> {
       linksCreated: 0,
       linksClaimed: 0,
       ordersCreated: 0,
+      potsCreated: 0,
     }
   );
 }
@@ -39,11 +40,12 @@ function day(timestamp: number) {
 async function recordPayment(
   context: Ctx,
   event: Ev,
-  p: Omit<Payment, "id" | "txHash" | "blockNumber" | "timestamp">,
+  p: Omit<Payment, "id" | "txHash" | "blockNumber" | "timestamp" | "pot_id"> & { pot_id?: string },
 ) {
   const at = event.block.timestamp;
   context.Payment.set({
     ...p,
+    pot_id: p.pot_id,
     id: `${event.transaction.hash}-${event.logIndex}`,
     txHash: event.transaction.hash,
     blockNumber: event.block.number,
@@ -173,6 +175,7 @@ indexer.onEvent({ contract: "LoftEscrow", event: "OrderCreated" }, async ({ even
     paidTotal: 0n,
     skippedCount: 0,
     lastRate: undefined,
+    minRate: p.minRate,
     active: true,
     refunded: 0n,
     createdAt: at,
@@ -218,4 +221,64 @@ indexer.onEvent({ contract: "LoftEscrow", event: "OrderSkipped" }, async ({ even
 indexer.onEvent({ contract: "LoftEscrow", event: "OrderClosed" }, async ({ event, context }) => {
   const order = await context.Order.getOrThrow(event.params.orderId.toString());
   context.Order.set({ ...order, active: false, budgetLeft: 0n, refunded: event.params.refunded });
+});
+
+// ------------------------------------------------------------------- pots
+
+indexer.onEvent({ contract: "LoftEscrow", event: "PotCreated" }, async ({ event, context }) => {
+  const at = event.block.timestamp;
+  const p = event.params;
+  context.Account.set(await touch(context, p.organizer, at));
+  if (p.beneficiary !== p.organizer) context.Account.set(await touch(context, p.beneficiary, at));
+  context.Pot.set({
+    id: p.potId.toString(),
+    organizer_id: p.organizer,
+    beneficiary_id: p.beneficiary,
+    target: p.target,
+    raised: 0n,
+    deadline: Number(p.deadline),
+    contributors: 0,
+    released: false,
+    releasedAmount: undefined,
+    createdAt: at,
+  });
+  const t = await totals(context);
+  context.Totals.set({ ...t, potsCreated: t.potsCreated + 1 });
+});
+
+indexer.onEvent({ contract: "LoftEscrow", event: "PotContributed" }, async ({ event, context }) => {
+  const p = event.params;
+  const pot = await context.Pot.getOrThrow(p.potId.toString());
+  context.Account.set(await touch(context, p.from, event.block.timestamp));
+  context.PotContribution.set({
+    id: `${event.transaction.hash}-${event.logIndex}`,
+    pot_id: pot.id,
+    from_id: p.from,
+    amount: p.amount,
+    ref: p.ref,
+    txHash: event.transaction.hash,
+    timestamp: event.block.timestamp,
+  });
+  context.Pot.set({ ...pot, raised: pot.raised + p.amount, contributors: pot.contributors + 1 });
+});
+
+/** A released pot is one payment from the organizer's pot to the person it was for. */
+indexer.onEvent({ contract: "LoftEscrow", event: "PotReleased" }, async ({ event, context }) => {
+  const p = event.params;
+  const pot = await context.Pot.getOrThrow(p.potId.toString());
+  context.Pot.set({ ...pot, released: true, releasedAmount: p.amount });
+  if (p.amount > 0n) {
+    await recordPayment(context, event, {
+      kind: "POT",
+      from_id: pot.organizer_id,
+      to_id: p.beneficiary,
+      amount: p.amount,
+      ngnPerUsd: undefined,
+      ngnValue: undefined,
+      ref: undefined,
+      link_id: undefined,
+      order_id: undefined,
+      pot_id: pot.id,
+    });
+  }
 });

@@ -6,6 +6,7 @@ enum PaymentKind {
   DIRECT
   LINK
   ORDER
+  POT
 }
 
 enum LinkStatus {
@@ -49,6 +50,7 @@ type Payment {
   ref: String
   link: Link
   order: Order
+  pot: Pot
   txHash: String!
   blockNumber: Int!
   timestamp: Int! @index
@@ -81,10 +83,37 @@ type Order {
   paidTotal: BigInt!
   skippedCount: Int!
   lastRate: BigInt
+  "Naira per dollar (6 decimals) Chainlink's rate must reach before a payment goes; 0 for none"
+  minRate: BigInt!
   active: Boolean!
   refunded: BigInt!
   payments: [Payment!]! @derivedFrom(field: "order")
   createdAt: Int!
+}
+
+"A family pot: several people paying in for one person."
+type Pot {
+  id: ID!
+  organizer: Account!
+  beneficiary: Account!
+  target: BigInt!
+  raised: BigInt!
+  deadline: Int!
+  contributors: Int!
+  released: Boolean!
+  releasedAmount: BigInt
+  createdAt: Int!
+  contributions: [PotContribution!]! @derivedFrom(field: "pot")
+}
+
+type PotContribution {
+  id: ID!
+  pot: Pot!
+  from: Account!
+  amount: BigInt!
+  ref: String!
+  txHash: String!
+  timestamp: Int!
 }
 
 "One row per UTC day: volume by kind and the average rate recorded."
@@ -107,4 +136,5 @@ type Totals {
   linksCreated: Int!
   linksClaimed: Int!
   ordersCreated: Int!
+  potsCreated: Int!
 }

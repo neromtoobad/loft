@@ -1,7 +1,7 @@
 {
   "mainnet": {
-    "escrow": "0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90",
-    "block": 112465375,
+    "escrow": "0xc2da029bd912516c2046fc928829f63749e6d275",
+    "block": 112495462,
     "relayer": "0x25181f63F3e5E15B002454F91Ae1F95Ba45c8790"
   },
   "testnet": null

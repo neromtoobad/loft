@@ -128,7 +128,7 @@ describe("LoftEscrow on a Monad testnet fork", () => {
     const firstDue = (await now()) + 60n;
     const period = 7 * 86400;
     const salt = keccak256(toBytes("order-1"));
-    const params = [recipient.address, usd(25), usd(100), Number(firstDue), period, 0, salt] as const;
+    const params = [recipient.address, usd(25), usd(100), Number(firstDue), period, 0, 0n, salt] as const;
     const nonce = (await client.readContract({
       address: escrow, abi: escrowAbi, functionName: "orderNonce", args: [...params],
     })) as Hex;
@@ -137,7 +137,7 @@ describe("LoftEscrow on a Monad testnet fork", () => {
       sender.address, ...params, auth.validBefore, auth.v, auth.r, auth.s,
     ]);
 
-    const report = encodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }], [[0n], 1_530_250000n]);
+    const report = encodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }, { type: "uint256[]" }], [[0n], 1_530_250000n, []]);
     // Only a registered forwarder may deliver reports.
     await assert.rejects(send(relayer.address, escrow, escrowAbi, "onReport", ["0x", report]));
 
@@ -176,7 +176,7 @@ describe("LoftEscrow on a Monad testnet fork", () => {
     await send(WHALE, AUSD, ausdAbi, "transfer", [mum.address, usd(30)]);
     const firstDue = await now();
     const salt = keccak256(toBytes("order-topup"));
-    const params = [mum.address, usd(100), usd(200), Number(firstDue), 86400, 1, salt] as const;
+    const params = [mum.address, usd(100), usd(200), Number(firstDue), 86400, 1, 0n, salt] as const;
     const nonce = (await client.readContract({
       address: escrow, abi: escrowAbi, functionName: "orderNonce", args: [...params],
     })) as Hex;
@@ -185,7 +185,7 @@ describe("LoftEscrow on a Monad testnet fork", () => {
       sender.address, ...params, auth.validBefore, auth.v, auth.r, auth.s,
     ]);
     const id = ((await client.readContract({ address: escrow, abi: escrowAbi, functionName: "ordersLength" })) as bigint) - 1n;
-    const report = encodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }], [[id], 1_530_000000n]);
+    const report = encodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }, { type: "uint256[]" }], [[id], 1_530_000000n, []]);
 
     await warp(1n);
     await send(forwarder.address, escrow, escrowAbi, "onReport", ["0x", report]);

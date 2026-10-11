@@ -6,7 +6,7 @@
 
 Built for [Monad Metropolis](https://monad.xyz/developers/hackathons/metropolis), Track 02: Consumer Products & Payments.
 
-> **Live on Monad mainnet:** https://loft-production-09f6.up.railway.app · escrow [`0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90`](https://monadvision.com/address/0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90). Unaudited: use small amounts.
+> **Live on Monad mainnet:** https://loft-production-09f6.up.railway.app · escrow [`0xc2da029bd912516c2046fc928829f63749e6d275`](https://monadvision.com/address/0xc2da029bd912516c2046fc928829f63749e6d275). Unaudited: use small amounts.
 
 ## The problem
 
@@ -21,6 +21,14 @@ Sending $50 from London or Houston to a mother in Lagos still means a remittance
 **Sending to someone you know is instant.** AUSD supports EIP-3009, so every payment is a signature that our relayer submits. It passes through `LoftEscrow.send`, which emits a `Sent` event whose `ref` is the hash of the encrypted note, so the recipient can check the note against the chain. The money settles on Monad in under a second.
 
 **Standing orders.** "$50 to Mum every Friday", or "keep Mum's balance at $100". The sender prepays and the escrow holds the funds. A Chainlink CRE workflow releases each payment when it's due and writes the naira rate it used on-chain, so every receipt says what the money was worth where it landed.
+
+**Ask the family.** The person at home makes the request: "School fees, $30". It becomes a link anyone abroad can pay in one tap, and the requester sees who paid. Paying is an ordinary direct send that carries the request's id.
+
+**Family pots.** Siblings in London, Houston and Toronto chip in for one person: Mum's rent, a school term, a hospital bill. The pot lives in the escrow. It pays out the moment it reaches its target, or Chainlink CRE releases whatever was raised on the deadline. The organizer signs the pot's terms, so nobody can open one in their name, and every contribution is a gasless EIP-3009 authorization with its own nonce.
+
+**Send when the rate is right.** "Send Mum $50 when $1 buys ₦1,450." The order is prepaid with a rate floor; the CRE workflow's report carries the DON-agreed naira rate, and the escrow only pays once that rate reaches the floor. Below it, the order simply stays due.
+
+**Postcards.** When money lands, the sender can share an airmail postcard: the recipient's creature on the stamp, a postmark with the real confirmation time, the amount and the note. It's drawn on a canvas in the browser and shared as an image to WhatsApp.
 
 **Plain-language requests.** Type "send mum ₦50k every Friday" and Kimi turns it into a transfer you confirm. Kimi sees the sentence and your contacts' nicknames, never addresses or balances, and nothing moves without a tap.
 
@@ -67,7 +75,7 @@ The two outputs are unrelated. Knowing the wallet key reveals nothing about the 
 |---|---|---|
 | **Agora (AUSD)** | The currency. EIP-3009 transfers make every flow gasless; `receiveWithAuthorization` funds the escrow. | Working (fork of testnet) |
 | **Mera** | The entire account layer; the dual-salt client adds a second, non-wallet key family. | Working |
-| **Chainlink CRE** | `cre/loft-orders`: cron trigger, EVM read of due orders, naira rate from three public sources (median per node, then across the DON, out-of-band values dropped), one report to `onReport` that pays every due order. | Workflow built, unit-tested with the SDK mocks, compiles to WASM; the escrow accepts the production and simulation forwarders |
+| **Chainlink CRE** | `cre/loft-orders`: cron trigger, EVM reads of due orders and due pots, naira rate from three public sources (median per node, then across the DON, out-of-band values dropped), one report to `onReport` that pays every due order (holding back rate-triggered ones until the agreed rate reaches their floor) and releases pots past their deadline. | Workflow built, unit-tested with the SDK mocks, compiles to WASM; the escrow accepts the production and simulation forwarders |
 | **Kimi** | Natural-language send and schedule requests. | Built, needs an API key |
 | **Envio** | `indexer/`: HyperIndex over every LoftEscrow event. Payments of each kind, link lifecycles, standing orders with payout history and naira value, per-day and all-time totals. Powers the Activity screen. | Handlers built and tested; hosted deployment pending |
 | **Aurora Intents** | "Add money" from any chain: USDC from Base, Arbitrum and others arrives as AUSD. | Planned |

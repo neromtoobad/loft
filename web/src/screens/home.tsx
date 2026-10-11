@@ -102,6 +102,30 @@ export function Home() {
 
       <NextUp outgoing={outgoing} />
 
+      <div className="ways">
+        <button className="way" onClick={() => navigate("/ask")}>
+          <span className="way-icon">
+            <Icon.receive size={18} />
+          </span>
+          <strong>Ask the family</strong>
+          <span>Request, they pay</span>
+        </button>
+        <button className="way" onClick={() => navigate("/pots")}>
+          <span className="way-icon">
+            <Icon.user size={18} />
+          </span>
+          <strong>Family pot</strong>
+          <span>Chip in together</span>
+        </button>
+        <button className="way" onClick={() => navigate("/schedule?mode=rate")}>
+          <span className="way-icon">
+            <Icon.dollar size={18} />
+          </span>
+          <strong>At a rate</strong>
+          <span>Send when ₦ is right</span>
+        </button>
+      </div>
+
       {config?.kimi && <Ask />}
 
       {vault.contacts.length > 0 && (
@@ -190,12 +214,19 @@ export function Home() {
  * payment, else sending again to the last person, else a first link.
  */
 function NextUp({ outgoing }: { outgoing: OrderInfo[] }) {
-  const { vault } = useLoft();
+  const { vault, rate } = useLoft();
   if (!vault) return null;
   const name = (addr: string) => vault.contacts.find((c) => c.address.toLowerCase() === addr.toLowerCase());
   let label: string, title: string, chips: string[], to: string, kind: string | null | undefined;
   const order = [...outgoing].sort((a, b) => a.nextDue - b.nextDue)[0];
-  if (order) {
+  if (order && order.minRate > 0) {
+    const who = name(order.recipient);
+    label = "Rate trigger";
+    title = `${who?.name ?? "They"} gets ${usd(order.amount)} when $1 buys ₦${Math.round(order.minRate).toLocaleString("en-NG")}`;
+    chips = [rate ? `Today ₦${Math.round(rate).toLocaleString("en-NG")}` : "Waiting", "Watched by Chainlink"];
+    to = "/schedule";
+    kind = who?.character;
+  } else if (order) {
     const who = name(order.recipient);
     label = `Standing order · ${cadence(order.period)}`;
     title = `${who?.name ?? "They"} ${order.mode === "topup" ? `stays at ${usd(order.amount)}` : `gets ${usd(order.amount)}`} ${when(order.nextDue)}`;

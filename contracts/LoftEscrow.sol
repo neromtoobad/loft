@@ -22,9 +22,11 @@ interface IAUSD {
 }
 
 /// @title LoftEscrow
-/// @notice Holds AUSD for two things a remittance needs that a plain transfer
-/// can't do: claim links for people who don't have an account yet, and
-/// prepaid standing orders that Chainlink CRE releases on schedule.
+/// @notice Holds AUSD for what a remittance needs that a plain transfer can't
+/// do: claim links for people who don't have an account yet, prepaid standing
+/// orders that Chainlink CRE releases on schedule (optionally only once the
+/// naira rate reaches a floor), and family pots that several people pay into
+/// for one person.
 ///
 /// Every deposit goes through `receiveWithAuthorization`, and the EIP-3009
 /// nonce the sender signs is derived from the deposit's parameters. A relayer
@@ -76,6 +78,9 @@ contract LoftEscrow {
         uint40 nextDue;
         uint32 period;
         Mode mode;
+        /// NGN per USD (6 decimals) the DON's rate must reach before this pays.
+        /// Zero means pay on schedule whatever the rate.
+        uint64 minRate;
     }
 
     Order[] public orders;
@@ -88,7 +93,8 @@ contract LoftEscrow {
         uint256 budget,
         uint256 firstDue,
         uint256 period,
-        Mode mode
+        Mode mode,
+        uint256 minRate
     );
     /// `ngnPerUsd` is the naira rate the DON agreed on, with 6 decimals, so a
     /// receipt can say what the transfer was worth where it landed.
@@ -103,6 +109,28 @@ contract LoftEscrow {
     event OrderClosed(uint256 indexed orderId, address indexed sender, uint256 refunded);
     event ReporterSet(address indexed reporter, bool allowed);
 
+    // ----------------------------------------------------------------- pots
+
+    /// Several people paying in for one person: Mum's rent, a school term, a
+    /// hospital bill. It pays out the moment it reaches its target, or on the
+    /// deadline with whatever was raised.
+    struct Pot {
+        address beneficiary;
+        uint40 deadline;
+        bool released;
+        address organizer;
+        uint96 target;
+        uint96 raised;
+    }
+
+    Pot[] public pots;
+
+    event PotCreated(
+        uint256 indexed potId, address indexed organizer, address indexed beneficiary, uint256 target, uint256 deadline
+    );
+    event PotContributed(uint256 indexed potId, address indexed from, uint256 amount, bytes32 ref);
+    event PotReleased(uint256 indexed potId, address indexed beneficiary, uint256 amount);
+
     error NotOwner();
     error NotReporter();
     error LinkExists();
@@ -112,6 +140,9 @@ contract LoftEscrow {
     error NotExpired();
     error BadOrder();
     error OrderInactive();
+    error BadPot();
+    error PotClosed();
+    error PotNotDue();
 
     constructor(IAUSD ausd_, address forwarder) {
         ausd = ausd_;
@@ -215,9 +246,12 @@ contract LoftEscrow {
         uint40 firstDue,
         uint32 period,
         Mode mode,
+        uint64 minRate,
         bytes32 salt
     ) public view returns (bytes32) {
-        return keccak256(abi.encode(address(this), "order", recipient, amount, budget, firstDue, period, mode, salt));
+        return keccak256(
+            abi.encode(address(this), "order", recipient, amount, budget, firstDue, period, mode, minRate, salt)
+        );
     }
 
     function createOrder(
@@ -228,6 +262,7 @@ contract LoftEscrow {
         uint40 firstDue,
         uint32 period,
         Mode mode,
+        uint64 minRate,
         bytes32 salt,
         uint256 validBefore,
         uint8 v,
@@ -241,14 +276,14 @@ contract LoftEscrow {
             budget,
             0,
             validBefore,
-            orderNonce(recipient, amount, budget, firstDue, period, mode, salt),
+            orderNonce(recipient, amount, budget, firstDue, period, mode, minRate, salt),
             v,
             r,
             s
         );
         orderId = orders.length;
-        orders.push(Order(sender, recipient, amount, budget, firstDue, period, mode));
-        emit OrderCreated(orderId, sender, recipient, amount, budget, firstDue, period, mode);
+        orders.push(Order(sender, recipient, amount, budget, firstDue, period, mode, minRate));
+        emit OrderCreated(orderId, sender, recipient, amount, budget, firstDue, period, mode, minRate);
     }
 
     /// The message a sender signs to close an order and take back its budget.
@@ -284,13 +319,101 @@ contract LoftEscrow {
     }
 
     /// Chainlink CRE entry point, called by the KeystoneForwarder with the
-    /// workflow's signed report: `abi.encode(uint256[] orderIds, uint256 ngnPerUsd)`.
+    /// workflow's signed report:
+    /// `abi.encode(uint256[] orderIds, uint256 ngnPerUsd, uint256[] potIds)`.
     function onReport(bytes calldata, bytes calldata report) external {
         if (!isReporter[msg.sender]) revert NotReporter();
-        (uint256[] memory ids, uint256 ngnPerUsd) = abi.decode(report, (uint256[], uint256));
+        (uint256[] memory ids, uint256 ngnPerUsd, uint256[] memory potIds) =
+            abi.decode(report, (uint256[], uint256, uint256[]));
         for (uint256 i; i < ids.length; i++) {
             _execute(ids[i], ngnPerUsd);
         }
+        for (uint256 i; i < potIds.length; i++) {
+            Pot storage pot = pots[potIds[i]];
+            // Same rule as releasePot, but a stale id is skipped, not fatal.
+            if (!pot.released && block.timestamp >= pot.deadline) _release(potIds[i], pot);
+        }
+    }
+
+    // ================================================================= pots
+
+    /// What an organizer signs to open a pot, so nobody can open one in their name.
+    function potDigest(address beneficiary, uint96 target, uint40 deadline, bytes32 salt)
+        public
+        view
+        returns (bytes32)
+    {
+        bytes32 inner = keccak256(abi.encode(address(this), block.chainid, "pot", beneficiary, target, deadline, salt));
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", inner));
+    }
+
+    function createPot(
+        address organizer,
+        address beneficiary,
+        uint96 target,
+        uint40 deadline,
+        bytes32 salt,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 potId) {
+        if (beneficiary == address(0) || target == 0 || deadline <= block.timestamp) revert BadPot();
+        if (ecrecover(potDigest(beneficiary, target, deadline, salt), v, r, s) != organizer) revert BadSignature();
+        potId = pots.length;
+        pots.push(Pot(beneficiary, deadline, false, organizer, target, 0));
+        emit PotCreated(potId, organizer, beneficiary, target, deadline);
+    }
+
+    /// The EIP-3009 nonce a contributor signs. `ref` makes each contribution
+    /// unique and carries the hash of the note that comes with it.
+    function potNonce(uint256 potId, bytes32 ref) public view returns (bytes32) {
+        return keccak256(abi.encode(address(this), "pot", potId, ref));
+    }
+
+    function contribute(
+        uint256 potId,
+        address from,
+        uint96 amount,
+        uint256 validBefore,
+        bytes32 ref,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        if (potId >= pots.length) revert BadPot();
+        Pot storage pot = pots[potId];
+        if (pot.released || block.timestamp >= pot.deadline) revert PotClosed();
+        ausd.receiveWithAuthorization(from, address(this), amount, 0, validBefore, potNonce(potId, ref), v, r, s);
+        pot.raised += amount;
+        emit PotContributed(potId, from, amount, ref);
+        if (pot.raised >= pot.target) _release(potId, pot);
+    }
+
+    /// After the deadline anyone may release a pot to its beneficiary.
+    function releasePot(uint256 potId) external {
+        if (potId >= pots.length) revert BadPot();
+        Pot storage pot = pots[potId];
+        if (pot.released) revert PotClosed();
+        if (block.timestamp < pot.deadline) revert PotNotDue();
+        _release(potId, pot);
+    }
+
+    /// Pots past their deadline and not yet paid out, for the CRE workflow.
+    function duePots(uint256 start, uint256 limit) external view returns (uint256[] memory ids) {
+        uint256 end = start + limit;
+        if (end > pots.length) end = pots.length;
+        uint256[] memory buf = new uint256[](end > start ? end - start : 0);
+        uint256 n;
+        for (uint256 i = start; i < end; i++) {
+            Pot storage pot = pots[i];
+            if (!pot.released && block.timestamp >= pot.deadline) buf[n++] = i;
+        }
+        ids = new uint256[](n);
+        for (uint256 i; i < n; i++) ids[i] = buf[i];
+    }
+
+    function potsLength() external view returns (uint256) {
+        return pots.length;
     }
 
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
@@ -304,6 +427,8 @@ contract LoftEscrow {
         // A late or duplicate report must not pay twice, so anything not yet
         // due is skipped rather than reverting the whole batch.
         if (order.budget == 0 || order.nextDue > block.timestamp) return;
+        // Waiting for a better rate: stay due, and try again on the next report.
+        if (order.minRate > 0 && ngnPerUsd < order.minRate) return;
 
         uint256 payout = order.amount;
         if (order.mode == Mode.TopUp) {
@@ -321,6 +446,13 @@ contract LoftEscrow {
         ausd.transfer(order.recipient, payout);
         emit Remitted(orderId, order.sender, order.recipient, payout, ngnPerUsd);
         if (order.budget == 0) emit OrderClosed(orderId, order.sender, 0);
+    }
+
+    function _release(uint256 potId, Pot storage pot) internal {
+        pot.released = true;
+        uint256 amount = pot.raised;
+        if (amount > 0) ausd.transfer(pot.beneficiary, amount);
+        emit PotReleased(potId, pot.beneficiary, amount);
     }
 
     function _close(uint256 orderId, Order storage order) internal {

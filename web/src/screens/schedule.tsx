@@ -31,7 +31,10 @@ export function Schedule() {
   const [amount, setAmount] = useState(params.get("usd") ?? "");
   const [every, setEvery] = useState<Cadence>((params.get("cadence") as Cadence) ?? "weekly");
   const [count, setCount] = useState(params.get("count") ?? "4");
-  const [mode, setMode] = useState<"fixed" | "topup">(params.get("mode") === "topup" ? "topup" : "fixed");
+  const [mode, setMode] = useState<"fixed" | "topup" | "rate">(
+    params.get("mode") === "topup" ? "topup" : params.get("mode") === "rate" ? "rate" : "fixed",
+  );
+  const [floor, setFloor] = useState(params.get("rate") ?? "");
   const weekday = params.get("weekday") === null ? null : Number(params.get("weekday"));
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Hex | null>(null);
@@ -40,7 +43,8 @@ export function Schedule() {
   const me = session.account.address.toLowerCase();
   const mine = orders.filter((o) => o.sender.toLowerCase() === me);
   const n = Number(amount);
-  const times = Math.max(1, Math.min(52, Number(count) || 1));
+  const times = mode === "rate" ? 1 : Math.max(1, Math.min(52, Number(count) || 1));
+  const minRate = Number(floor);
   const budget = n * times;
   const nameFor = (addr: string) =>
     vault.contacts.find((c) => c.address.toLowerCase() === addr.toLowerCase())?.name ?? `${addr.slice(0, 6)}…`;
@@ -55,8 +59,10 @@ export function Schedule() {
           amountUsd: Math.round(n * 100) / 100,
           count: times,
           period: PERIODS[every],
-          firstDue: firstDueFor(weekday),
+          // A rate trigger is one payment, due now, held until the rate reaches the floor.
+          firstDue: mode === "rate" ? Math.floor(Date.now() / 1000) : firstDueFor(weekday),
           mode: mode === "topup" ? 1 : 0,
+          minRate: mode === "rate" ? minRate : 0,
         }),
       );
     } catch (e) {
@@ -77,7 +83,11 @@ export function Schedule() {
       {done ? (
         <div className="card">
           <h3>All set</h3>
-          <p>The first payment goes out {when(firstDueFor(weekday))}.</p>
+          <p>
+            {mode === "rate"
+              ? `It goes out the moment $1 buys ₦${Math.round(minRate).toLocaleString("en-NG")} or more. Chainlink checks the rate for you.`
+              : `The first payment goes out ${when(firstDueFor(weekday))}.`}
+          </p>
           <TxLink hash={done} explorer={config?.explorer} />
         </div>
       ) : (
@@ -99,19 +109,34 @@ export function Schedule() {
                   </button>
                 ))}
               </div>
-              <div className="segmented" role="radiogroup">
+              <div className="segmented three" role="radiogroup">
                 <button className={mode === "fixed" ? "on" : ""} onClick={() => setMode("fixed")}>
-                  Fixed amount
+                  Every week
                 </button>
                 <button className={mode === "topup" ? "on" : ""} onClick={() => setMode("topup")}>
-                  Top them up
+                  Top up
+                </button>
+                <button className={mode === "rate" ? "on" : ""} onClick={() => setMode("rate")}>
+                  At a rate
                 </button>
               </div>
+              {mode === "rate" && (
+                <p className="muted small">
+                  Send once the naira is strong enough for you. Chainlink checks the rate and sends the moment it reaches your number.
+                </p>
+              )}
               <label className="field">
-                <span>{mode === "topup" ? "Keep their balance at ($)" : "Amount each time ($)"}</span>
+                <span>{mode === "topup" ? "Keep their balance at ($)" : mode === "rate" ? "Amount ($)" : "Amount each time ($)"}</span>
                 <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} placeholder="50" />
                 {rate && n > 0 && <small className="muted">≈ {ngn(n * rate)}</small>}
               </label>
+              {mode === "rate" ? (
+                <label className="field">
+                  <span>Send when $1 buys at least (₦)</span>
+                  <input inputMode="decimal" value={floor} onChange={(e) => setFloor(e.target.value.replace(/[^\d.]/g, ""))} placeholder={rate ? String(Math.ceil(rate * 1.02)) : "1400"} />
+                  {rate && <small className="muted">Today: ₦{Math.round(rate).toLocaleString("en-NG")} per $1</small>}
+                </label>
+              ) : (
               <div className="inline">
                 <label className="field">
                   <span>How often</span>
@@ -126,13 +151,14 @@ export function Schedule() {
                   <input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value.replace(/\D/g, ""))} />
                 </label>
               </div>
+              )}
               <p className="muted small">
                 Sets aside up to {usd(budget)} now. Anything unused comes back when you stop it.
               </p>
               <Assure>Held in a Monad contract, not by Loft. Each payment records that day's naira rate on-chain.</Assure>
               <ErrorLine error={error} />
-              <button className="primary" disabled={!contact || !(n > 0) || Boolean(busy)} onClick={submit}>
-                Start
+              <button className="primary big" disabled={!contact || !(n > 0) || (mode === "rate" && !(minRate > 0)) || Boolean(busy)} onClick={submit}>
+                {mode === "rate" ? "Send when the rate hits" : "Start"}
               </button>
             </>
           )}
@@ -145,9 +171,10 @@ export function Schedule() {
           {mine.map((o) => (
             <div key={o.id} className="row">
               <span>
-                {nameFor(o.recipient)}: {o.mode === "topup" ? `keep at ${usd(o.amount)}` : usd(o.amount)} {cadence(o.period)}
+                {nameFor(o.recipient)}:{" "}
+                {o.minRate > 0 ? `${usd(o.amount)} at ₦${Math.round(o.minRate).toLocaleString("en-NG")}/$` : o.mode === "topup" ? `keep at ${usd(o.amount)}` : `${usd(o.amount)} ${cadence(o.period)}`}
                 <small>
-                  {o.active ? `${usd(fromUnits(o.budget))} left · next ${when(o.nextDue)}` : "finished"}
+                  {!o.active ? "finished" : o.minRate > 0 ? `waiting for the rate${rate ? ` · today ₦${Math.round(rate).toLocaleString("en-NG")}` : ""}` : `${usd(fromUnits(o.budget))} left · next ${when(o.nextDue)}`}
                 </small>
               </span>
               {o.active && (

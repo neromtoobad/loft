@@ -101,7 +101,16 @@ export type OrderMode = 0 | 1; // Fixed, TopUp
 /** Mirrors LoftEscrow.orderNonce. */
 export function orderNonce(
   escrow: Address,
-  o: { recipient: Address; amount: bigint; budget: bigint; firstDue: number; period: number; mode: OrderMode; salt: Hex },
+  o: {
+    recipient: Address;
+    amount: bigint;
+    budget: bigint;
+    firstDue: number;
+    period: number;
+    mode: OrderMode;
+    minRate: bigint;
+    salt: Hex;
+  },
 ): Hex {
   return keccak256(
     encodeAbiParameters(
@@ -114,17 +123,22 @@ export function orderNonce(
         { type: "uint40" },
         { type: "uint32" },
         { type: "uint8" },
+        { type: "uint64" },
         { type: "bytes32" },
       ],
-      [escrow, "order", o.recipient, o.amount, o.budget, o.firstDue, o.period, o.mode, o.salt],
+      [escrow, "order", o.recipient, o.amount, o.budget, o.firstDue, o.period, o.mode, o.minRate, o.salt],
     ),
   );
 }
 
+/**
+ * Prepays a standing order. `minRate` (NGN per USD, 6 decimals) holds each
+ * payment until Chainlink's agreed rate reaches it; 0 pays on schedule.
+ */
 export async function signOrder(
   account: LocalAccount,
   ctx: Ctx,
-  o: { recipient: Address; amount: bigint; budget: bigint; firstDue: number; period: number; mode: OrderMode },
+  o: { recipient: Address; amount: bigint; budget: bigint; firstDue: number; period: number; mode: OrderMode; minRate: bigint },
 ) {
   const salt = randomNonce();
   const auth = await signReceive(account, ctx, o.budget, orderNonce(ctx.escrow, { ...o, salt }));
@@ -141,4 +155,40 @@ export async function signClose(account: LocalAccount, ctx: Ctx, orderId: bigint
   );
   const signature = await account.signMessage({ message: { raw: toBytes(inner) } });
   return { orderId, signature };
+}
+
+// -------------------------------------------------------------------- pots
+
+/** Mirrors LoftEscrow.potDigest: the organizer opens a pot in their own name. */
+export async function signPot(account: LocalAccount, ctx: Ctx, p: { beneficiary: Address; target: bigint; deadline: number }) {
+  const salt = randomNonce();
+  const inner = keccak256(
+    encodeAbiParameters(
+      [
+        { type: "address" },
+        { type: "uint256" },
+        { type: "string" },
+        { type: "address" },
+        { type: "uint96" },
+        { type: "uint40" },
+        { type: "bytes32" },
+      ],
+      [ctx.escrow, BigInt(ctx.chainId), "pot", p.beneficiary, p.target, p.deadline, salt],
+    ),
+  );
+  const signature = await account.signMessage({ message: { raw: toBytes(inner) } });
+  return { organizer: account.address, ...p, salt, signature };
+}
+
+/** Mirrors LoftEscrow.potNonce. */
+export function potNonce(escrow: Address, potId: bigint, ref: Hex): Hex {
+  return keccak256(
+    encodeAbiParameters([{ type: "address" }, { type: "string" }, { type: "uint256" }, { type: "bytes32" }], [escrow, "pot", potId, ref]),
+  );
+}
+
+/** A contribution to a pot. `ref` is unique per contribution (the hash of its note, if any). */
+export async function signContribution(account: LocalAccount, ctx: Ctx, potId: bigint, amount: bigint, ref: Hex = randomNonce()) {
+  const auth = await signReceive(account, ctx, amount, potNonce(ctx.escrow, potId, ref));
+  return { potId, from: account.address, amount, ref, ...auth };
 }

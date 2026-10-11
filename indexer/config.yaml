@@ -8,17 +8,20 @@ contracts:
       - event: "LinkCreated(address indexed claimKey, address indexed sender, uint256 amount, uint256 expiry)"
       - event: "LinkClaimed(address indexed claimKey, address indexed sender, address indexed recipient, uint256 amount)"
       - event: "LinkRefunded(address indexed claimKey, address indexed sender, uint256 amount)"
-      - event: "OrderCreated(uint256 indexed orderId, address indexed sender, address indexed recipient, uint256 amount, uint256 budget, uint256 firstDue, uint256 period, uint8 mode)"
+      - event: "OrderCreated(uint256 indexed orderId, address indexed sender, address indexed recipient, uint256 amount, uint256 budget, uint256 firstDue, uint256 period, uint8 mode, uint256 minRate)"
       - event: "Remitted(uint256 indexed orderId, address indexed sender, address indexed recipient, uint256 amount, uint256 ngnPerUsd)"
       - event: "OrderSkipped(uint256 indexed orderId, uint256 ngnPerUsd)"
       - event: "OrderClosed(uint256 indexed orderId, address indexed sender, uint256 refunded)"
+      - event: "PotCreated(uint256 indexed potId, address indexed organizer, address indexed beneficiary, uint256 target, uint256 deadline)"
+      - event: "PotContributed(uint256 indexed potId, address indexed from, uint256 amount, bytes32 ref)"
+      - event: "PotReleased(uint256 indexed potId, address indexed beneficiary, uint256 amount)"
 field_selection:
   transaction_fields:
     - hash
 chains:
   # Monad mainnet. scripts/deploy.ts fills in the escrow address and start block.
   - id: 143
-    start_block: 112465375
+    start_block: 112495462
     contracts:
       - name: LoftEscrow
-        address: "0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90"
+        address: "0xc2da029bd912516c2046fc928829f63749e6d275"

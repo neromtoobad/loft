@@ -1,11 +1,13 @@
 // Loft standing orders, orchestrated by Chainlink CRE.
 //
 // On a schedule, the DON:
-//   1. reads which prepaid standing orders are due from LoftEscrow (EVM read),
+//   1. reads which prepaid standing orders and which family pots are due from
+//      LoftEscrow (EVM read),
 //   2. fetches the naira rate from several public sources on every node and
 //      agrees on the median (HTTP + consensus),
-//   3. delivers one signed report to LoftEscrow.onReport, which pays each
-//      due order and records the agreed rate on the receipt (EVM write).
+//   3. delivers one signed report to LoftEscrow.onReport, which pays each due
+//      order (holding back any whose rate floor isn't met yet), records the
+//      agreed rate on the receipt, and releases pots past their deadline.
 //
 // The escrow only pays orders that are actually due, to recipients fixed when
 // the sender prepaid them, so a report can't redirect money. The rate is for
@@ -50,6 +52,7 @@ export type Config = z.infer<typeof configSchema>;
 
 export const ESCROW_ABI = parseAbi([
   "function dueOrders(uint256 start, uint256 limit) view returns (uint256[] ids)",
+  "function duePots(uint256 start, uint256 limit) view returns (uint256[] ids)",
 ]);
 
 function pick(body: unknown, path: string): unknown {
@@ -79,7 +82,7 @@ export const fetchNgnPerUsd = (requester: HTTPSendRequester, config: Config): nu
   return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
 };
 
-export type RunResult = { due: number; ngnPerUsd?: number; txHash?: string };
+export type RunResult = { due: number; pots: number; ngnPerUsd?: number; txHash?: string };
 
 export const onCron = (runtime: Runtime<Config>): RunResult => {
   const config = runtime.config;
@@ -87,23 +90,27 @@ export const onCron = (runtime: Runtime<Config>): RunResult => {
   if (!network) throw new Error(`unknown chain ${config.chainSelectorName}`);
   const evm = new EVMClient(network.chainSelector.selector);
 
-  // 1. Which orders are due?
-  const read = evm
-    .callContract(runtime, {
-      call: encodeCallMsg({
-        from: zeroAddress,
-        to: config.escrowAddress as Address,
-        data: encodeFunctionData({ abi: ESCROW_ABI, functionName: "dueOrders", args: [0n, BigInt(config.maxOrders)] }),
-      }),
-      blockNumber: LATEST_BLOCK_NUMBER,
-    })
-    .result();
-  const ids = decodeFunctionResult({ abi: ESCROW_ABI, functionName: "dueOrders", data: bytesToHex(read.data) }) as readonly bigint[];
-  if (ids.length === 0) {
-    runtime.log("no standing orders due");
-    return { due: 0 };
+  // 1. Which orders and pots are due?
+  const due = (functionName: "dueOrders" | "duePots") => {
+    const read = evm
+      .callContract(runtime, {
+        call: encodeCallMsg({
+          from: zeroAddress,
+          to: config.escrowAddress as Address,
+          data: encodeFunctionData({ abi: ESCROW_ABI, functionName, args: [0n, BigInt(config.maxOrders)] }),
+        }),
+        blockNumber: LATEST_BLOCK_NUMBER,
+      })
+      .result();
+    return decodeFunctionResult({ abi: ESCROW_ABI, functionName, data: bytesToHex(read.data) }) as readonly bigint[];
+  };
+  const ids = due("dueOrders");
+  const potIds = due("duePots");
+  if (ids.length === 0 && potIds.length === 0) {
+    runtime.log("nothing due");
+    return { due: 0, pots: 0 };
   }
-  runtime.log(`${ids.length} standing order(s) due: ${ids.join(", ")}`);
+  runtime.log(`${ids.length} standing order(s) due: ${ids.join(", ")}; ${potIds.length} pot(s) due: ${potIds.join(", ")}`);
 
   // 2. The naira rate, agreed across the DON.
   const ngnPerUsd = new HTTPClient()
@@ -111,10 +118,11 @@ export const onCron = (runtime: Runtime<Config>): RunResult => {
     .result();
   runtime.log(`agreed rate: ${ngnPerUsd} NGN per USD`);
 
-  // 3. One report pays every due order. Same encoding LoftEscrow.onReport decodes.
+  // 3. One report pays every due order and releases every due pot. Same
+  //    encoding LoftEscrow.onReport decodes.
   const payload = encodeAbiParameters(
-    [{ type: "uint256[]" }, { type: "uint256" }],
-    [[...ids], BigInt(Math.round(ngnPerUsd * 1e6))],
+    [{ type: "uint256[]" }, { type: "uint256" }, { type: "uint256[]" }],
+    [[...ids], BigInt(Math.round(ngnPerUsd * 1e6)), [...potIds]],
   );
   const report = runtime.report(prepareReportRequest(payload)).result();
   const write = evm
@@ -124,8 +132,8 @@ export const onCron = (runtime: Runtime<Config>): RunResult => {
     throw new Error(`report write failed: ${write.errorMessage || write.txStatus}`);
   }
   const txHash = write.txHash ? bytesToHex(write.txHash) : undefined;
-  runtime.log(`paid ${ids.length} order(s)${txHash ? ` in ${txHash}` : ""}`);
-  return { due: ids.length, ngnPerUsd, txHash };
+  runtime.log(`paid ${ids.length} order(s), released ${potIds.length} pot(s)${txHash ? ` in ${txHash}` : ""}`);
+  return { due: ids.length, pots: potIds.length, ngnPerUsd, txHash };
 };
 
 export const initWorkflow = (config: Config) => {

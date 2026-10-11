@@ -118,7 +118,7 @@ app.get("/api/balance/:address", async (c) => {
   return c.json({ ausd: balance.toString() });
 });
 
-type OrderRow = [Address, Address, bigint, bigint, number, number, number];
+type OrderRow = [Address, Address, bigint, bigint, number, number, number, bigint];
 
 /** Standing orders a person sends or receives. Small enough to scan for now. */
 app.get("/api/orders/:address", async (c) => {
@@ -152,6 +152,7 @@ app.get("/api/orders/:address", async (c) => {
         nextDue: o[4],
         period: o[5],
         mode: o[6] === 1 ? "topup" : "fixed",
+        minRate: Number(o[7] ?? 0n) / 1e6,
         active: o[3] > 0n,
       })),
   );
@@ -175,6 +176,13 @@ app.post("/api/relay/send", async (c) => {
     signature: hex(b.signature, "signature"),
   });
   if (sealed) store.addNote(b.to, sealed, result.hash);
+  if (typeof b.requestId === "string") {
+    const r = store.getRequest(b.requestId);
+    if (r && r.requester === String(b.to).toLowerCase() && BigInt(b.amount) >= BigInt(r.amount)) {
+      const payerName = typeof b.payerName === "string" && b.payerName.trim() ? b.payerName.trim().slice(0, 40) : null;
+      store.markRequestPaid(r.id, b.from, result.hash, payerName);
+    }
+  }
   return c.json(result);
 });
 
@@ -252,11 +260,151 @@ app.post("/api/relay/order", async (c) => {
       firstDue: Number(big(b.firstDue, "firstDue")),
       period: Number(big(b.period, "period")),
       mode,
+      minRate: b.minRate === undefined ? 0n : big(b.minRate, "minRate"),
       salt: hex(b.salt, "salt"),
       validBefore: big(b.validBefore, "validBefore"),
       signature: hex(b.signature, "signature"),
     }),
   );
+});
+
+// ---------------------------------------------------------------- pots
+
+function short(text: unknown, field: string, max: number): string {
+  if (typeof text !== "string" || !text.trim()) throw new HttpError(400, `${field} is required`);
+  return text.trim().slice(0, max);
+}
+
+app.post("/api/relay/pot", async (c) => {
+  rateLimit(c);
+  const b = await c.req.json();
+  if (!network.escrow) throw new HttpError(503, "escrow not deployed");
+  const title = short(b.title, "title", 60);
+  const organizer = addr(b.organizer, "organizer");
+  const beneficiary = addr(b.beneficiary, "beneficiary");
+  const result = await relayer.createPot({
+    organizer,
+    beneficiary,
+    target: big(b.target, "target"),
+    deadline: Number(big(b.deadline, "deadline")),
+    salt: hex(b.salt, "salt"),
+    signature: hex(b.signature, "signature"),
+  });
+  const beneficiaryName = typeof b.beneficiaryName === "string" && b.beneficiaryName.trim() ? b.beneficiaryName.trim().slice(0, 40) : "";
+  store.putPot(network.escrow, result.potId, { title, organizer, beneficiary, beneficiaryName, txHash: result.hash });
+  return c.json(result);
+});
+
+type PotRow = [Address, number, boolean, Address, bigint, bigint];
+
+async function potView(potId: number) {
+  if (!network.escrow) throw new HttpError(503, "escrow not deployed");
+  const count = Number(await relayer.publicClient.readContract({ address: network.escrow, abi: escrowAbi, functionName: "potsLength" }));
+  if (potId < 0 || potId >= count) throw new HttpError(404, "no such pot");
+  const [beneficiary, deadline, released, organizer, target, raised] = (await relayer.publicClient.readContract({
+    address: network.escrow,
+    abi: escrowAbi,
+    functionName: "pots",
+    args: [BigInt(potId)],
+  })) as PotRow;
+  const meta = store.getPot(network.escrow, potId);
+  const person = (a: Address) => {
+    const p = store.getProfile(a);
+    return { address: a, handle: p?.handle ?? null, character: p?.character ?? null };
+  };
+  return {
+    id: potId,
+    title: meta?.title ?? "Family pot",
+    beneficiary: { ...person(beneficiary), name: meta?.beneficiary_name || null },
+    organizer: person(organizer),
+    target: target.toString(),
+    raised: raised.toString(),
+    deadline,
+    released,
+    txHash: meta?.tx_hash ?? null,
+    contributions: store.contributions(network.escrow, potId).map((x) => ({
+      from: x.contributor,
+      name: x.name,
+      amount: x.amount,
+      txHash: x.tx_hash,
+      at: x.created_at,
+      character: store.getProfile(x.contributor)?.character ?? null,
+    })),
+  };
+}
+
+app.get("/api/pots/:id", async (c) => c.json(await potView(Number(big(c.req.param("id"), "id")))));
+
+app.get("/api/pots", async (c) => {
+  if (!network.escrow) return c.json([]);
+  const who = addr(c.req.query("address"), "address");
+  const ids = store.potsFor(network.escrow, who);
+  return c.json(await Promise.all(ids.map(potView)));
+});
+
+app.post("/api/relay/contribute", async (c) => {
+  rateLimit(c);
+  const b = await c.req.json();
+  if (!network.escrow) throw new HttpError(503, "escrow not deployed");
+  const potId = big(b.potId, "potId");
+  const from = addr(b.from, "from");
+  const amount = big(b.amount, "amount");
+  const result = await relayer.contribute({
+    potId,
+    from,
+    amount,
+    validBefore: big(b.validBefore, "validBefore"),
+    ref: hex(b.ref, "ref"),
+    signature: hex(b.signature, "signature"),
+  });
+  store.addContribution(network.escrow, Number(potId), {
+    contributor: from,
+    name: typeof b.name === "string" && b.name.trim() ? b.name.trim().slice(0, 40) : "Someone",
+    amount: amount.toString(),
+    txHash: result.hash,
+  });
+  return c.json(result);
+});
+
+// ------------------------------------------------------- ask the family
+
+/** A request is public by design: whoever has the link sees who asks, for what, and how much. */
+app.post("/api/requests", async (c) => {
+  rateLimit(c, 10);
+  const body = await c.req.text();
+  const requester = await signer(c, body);
+  const b = JSON.parse(body);
+  const amount = big(b.amount, "amount");
+  if (amount === 0n || amount > 10_000n * 10n ** BigInt(AUSD_DECIMALS)) throw new HttpError(400, "amount out of range");
+  const id = Array.from(crypto.getRandomValues(new Uint8Array(9)), (x) => "abcdefghjkmnpqrstuvwxyz23456789"[x % 31]).join("");
+  store.putRequest({ id, requester, name: short(b.name, "name", 40), amount: amount.toString(), note: short(b.note, "note", 140) });
+  return c.json({ id });
+});
+
+function requestView(r: NonNullable<ReturnType<typeof store.getRequest>>) {
+  const p = store.getProfile(r.requester);
+  return {
+    id: r.id,
+    requester: getAddress(r.requester),
+    name: r.name,
+    handle: p?.handle ?? null,
+    character: p?.character ?? null,
+    amount: r.amount,
+    note: r.note,
+    createdAt: r.created_at,
+    paid: r.paid_tx ? { by: r.paid_by, txHash: r.paid_tx, at: r.paid_at, name: r.paid_name ?? null } : null,
+  };
+}
+
+app.get("/api/requests/:id", (c) => {
+  const r = store.getRequest(c.req.param("id"));
+  if (!r) throw new HttpError(404, "no such request");
+  return c.json(requestView(r));
+});
+
+app.get("/api/requests", (c) => {
+  const who = addr(c.req.query("address"), "address");
+  return c.json(store.requestsBy(who).map(requestView));
 });
 
 app.post("/api/relay/close", async (c) => {

@@ -6,8 +6,10 @@ import {
   type OrderMode,
   signClaim,
   signClose,
+  signContribution,
   signLink,
   signOrder,
+  signPot,
   signSend,
   toUnits,
 } from "../../shared/money.ts";
@@ -46,7 +48,7 @@ type Actions = {
   lock(): void;
   refresh(): Promise<void>;
   updateVault(fn: (v: VaultData) => VaultData): Promise<void>;
-  sendTo(contact: Contact, amountUsd: number, note: string): Promise<Settled>;
+  sendTo(contact: Contact, amountUsd: number, note: string, requestId?: string): Promise<Settled>;
   makeLink(amountUsd: number, note: string, label: string): Promise<Settled & { url: string }>;
   claim(claimSecret: Hex, fromName: string, note: string | undefined): Promise<Settled>;
   cancelLink(claimSecret: Hex): Promise<Hex>;
@@ -57,8 +59,13 @@ type Actions = {
     period: number;
     firstDue: number;
     mode: OrderMode;
+    /** Hold each payment until Chainlink's naira rate reaches this (NGN per USD). */
+    minRate?: number;
   }): Promise<Hex>;
   cancelOrder(id: number): Promise<Hex>;
+  openPot(p: { title: string; beneficiary: Contact; targetUsd: number; deadline: number }): Promise<{ potId: number; hash: Hex }>;
+  chipIn(potId: number, amountUsd: number): Promise<Settled & { released: boolean }>;
+  askFamily(amountUsd: number, note: string): Promise<string>;
   setHandle(handle: string): Promise<void>;
   setCharacter(character: Creature): Promise<void>;
   resolveRecipient(input: string): Promise<Contact>;
@@ -288,7 +295,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     const text = input.trim();
     if (isAddress(text)) {
       const p = await api.profile(text).catch(() => null);
-      return { name: p?.handle ? `@${p.handle}` : text, address: text, handle: p?.handle, inboxKey: p?.inboxKey, character: p?.character };
+      return { name: p?.handle ? `@${p.handle}` : `${text.slice(0, 6)}…${text.slice(-4)}`, address: text, handle: p?.handle, inboxKey: p?.inboxKey, character: p?.character };
     }
     const handle = text.replace(/^@/, "");
     const p = await api.handle(handle);
@@ -296,7 +303,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const sendTo = useCallback(
-    (contact: Contact, amountUsd: number, note: string) =>
+    (contact: Contact, amountUsd: number, note: string, requestId?: string) =>
       withBusy("Sending", async () => {
         if (!session || !vault) throw new Error("locked");
         await stepUp(amountUsd);
@@ -318,7 +325,8 @@ export function LoftProvider({ children }: { children: ReactNode }) {
         // The note's hash rides onchain as the payment's ref.
         const signed = await signSend(session.account, ctx(), contact.address, value, sealedNote ? keccak256(toBytes(sealedNote)) : undefined);
         const started = performance.now();
-        const { hash } = await api.send({ ...signed, sealedNote });
+        const payerName = vault.handle ? `@${vault.handle}` : vault.name;
+        const { hash } = await api.send({ ...signed, sealedNote, requestId, payerName: requestId ? payerName : undefined });
         const ms = performance.now() - started;
         await updateVault((v) =>
           upsertContact(
@@ -435,6 +443,7 @@ export function LoftProvider({ children }: { children: ReactNode }) {
           firstDue: o.firstDue,
           period: o.period,
           mode: o.mode,
+          minRate: BigInt(Math.round((o.minRate ?? 0) * 1e6)),
         });
         const { hash } = await api.createOrder(signed);
         await updateVault((v) => upsertContact(v, o.contact));
@@ -454,6 +463,52 @@ export function LoftProvider({ children }: { children: ReactNode }) {
         return hash;
       }),
     [session, ctx, refresh, withBusy],
+  );
+
+  const openPot = useCallback<Actions["openPot"]>(
+    (p) =>
+      withBusy("Opening the pot", async () => {
+        if (!session) throw new Error("locked");
+        const signed = await signPot(session.account, ctx(), {
+          beneficiary: p.beneficiary.address,
+          target: toUnits(p.targetUsd),
+          deadline: p.deadline,
+        });
+        const { potId, hash } = await api.createPot({ ...signed, title: p.title, beneficiaryName: p.beneficiary.name.replace(/^@/, "") });
+        await updateVault((v) => upsertContact(v, p.beneficiary));
+        return { potId, hash };
+      }),
+    [session, ctx, updateVault, withBusy],
+  );
+
+  const chipIn = useCallback<Actions["chipIn"]>(
+    (potId, amountUsd) =>
+      withBusy("Chipping in", async () => {
+        if (!session || !vault) throw new Error("locked");
+        await stepUp(amountUsd);
+        const signed = await signContribution(session.account, ctx(), BigInt(potId), toUnits(amountUsd));
+        const started = performance.now();
+        const { hash, released } = await api.contribute({ ...signed, name: vault.handle ? `@${vault.handle}` : vault.name });
+        const ms = performance.now() - started;
+        await refresh();
+        return { hash, ms, released };
+      }),
+    [session, vault, ctx, stepUp, refresh, withBusy],
+  );
+
+  /** A request is a public link: whoever has it sees who asks, for what, and how much. */
+  const askFamily = useCallback<Actions["askFamily"]>(
+    (amountUsd, note) =>
+      withBusy("Making your request", async () => {
+        if (!session || !vault) throw new Error("locked");
+        const { id } = await api.createRequest(session.account, {
+          amount: toUnits(amountUsd).toString(),
+          note,
+          name: vault.name || (vault.handle ? `@${vault.handle}` : "Someone"),
+        });
+        return `${location.origin}/r#${id}`;
+      }),
+    [session, vault, withBusy],
   );
 
   const setHandle = useCallback(
@@ -495,6 +550,9 @@ export function LoftProvider({ children }: { children: ReactNode }) {
     cancelLink,
     schedule,
     cancelOrder,
+    openPot,
+    chipIn,
+    askFamily,
     setHandle,
     setCharacter,
     resolveRecipient,

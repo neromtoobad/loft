@@ -2,7 +2,7 @@
   "schedule": "0 0 * * * *",
   "chainSelectorName": "monad-mainnet",
   "isTestnet": false,
-  "escrowAddress": "0x9d4a2d3dd8df56bdfa1b2546f5f7506246be2f90",
+  "escrowAddress": "0xc2da029bd912516c2046fc928829f63749e6d275",
   "gasLimit": "600000",
   "maxOrders": 50,
   "rateSources": [

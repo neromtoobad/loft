@@ -13,7 +13,8 @@ function ev(event: string, params: Record<string, unknown>, timestamp = DAY) {
     contract: "LoftEscrow" as const,
     event,
     params,
-    block: { number: 100 + log, timestamp },
+    // Above config.yaml's start_block, or the simulator filters the event out.
+    block: { number: 200_000_000 + log, timestamp },
     transaction: { hash: `0x${log.toString(16).padStart(64, "0")}` },
     logIndex: 0,
   };
@@ -66,7 +67,7 @@ describe("Loft indexer", () => {
     const indexer = await run([
       ev("OrderCreated", {
         orderId: 0n, sender: dimeji, recipient: mum, amount: usd(10), budget: usd(30),
-        firstDue: BigInt(DAY), period: BigInt(week), mode: 0n,
+        firstDue: BigInt(DAY), period: BigInt(week), mode: 0n, minRate: 0n,
       }),
       ev("Remitted", { orderId: 0n, sender: dimeji, recipient: mum, amount: usd(10), ngnPerUsd: 1_329_264038n }, DAY + 60),
       ev("OrderSkipped", { orderId: 0n, ngnPerUsd: 1_331_000000n }, DAY + week + 60),
@@ -82,5 +83,23 @@ describe("Loft indexer", () => {
     t.expect(payment).toMatchObject({ kind: "ORDER", order_id: "0", ngnPerUsd: 1_329_264038n, ngnValue: 13_292_640380n });
     const today = await indexer.DailyStats.getOrThrow(new Date(DAY * 1000).toISOString().slice(0, 10));
     t.expect(today).toMatchObject({ orders: 1, rateSamples: 1, rateSum: 1_329_264038n });
+  });
+
+  it("follows a family pot from contributions to its release as one payment to the beneficiary", async (t) => {
+    const indexer = await run([
+      ev("PotCreated", { potId: 0n, organizer: dimeji, beneficiary: mum, target: usd(30), deadline: BigInt(DAY + 86400) }),
+      ev("PotContributed", { potId: 0n, from: dimeji, amount: usd(12), ref: REF }),
+      ev("PotContributed", { potId: 0n, from: otherKey, amount: usd(20), ref: REF }),
+      ev("PotReleased", { potId: 0n, beneficiary: mum, amount: usd(32) }),
+    ]);
+    const pot = await indexer.Pot.getOrThrow("0");
+    t.expect(pot.raised).toBe(usd(32));
+    t.expect(pot.contributors).toBe(2);
+    t.expect(pot.released).toBe(true);
+    const payments = await indexer.Payment.getAll();
+    const toMum = payments.filter((p: any) => p.kind === "POT");
+    t.expect(toMum).toHaveLength(1);
+    t.expect(toMum[0].amount).toBe(usd(32));
+    t.expect((await indexer.Totals.getOrThrow("all")).potsCreated).toBe(1);
   });
 });

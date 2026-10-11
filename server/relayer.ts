@@ -6,6 +6,7 @@ import {
   createPublicClient,
   createWalletClient,
   http,
+  parseEventLogs,
   parseSignature,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -91,18 +92,43 @@ export function createRelayer(network: Network, privateKey: Hex, rpcUrl?: string
       firstDue: number;
       period: number;
       mode: 0 | 1;
+      minRate: bigint;
       salt: Hex;
       validBefore: bigint;
       signature: Hex;
     }) {
       return submit(escrow(), escrowAbi, "createOrder", [
-        p.sender, p.recipient, p.amount, p.budget, p.firstDue, p.period, p.mode, p.salt, p.validBefore,
+        p.sender, p.recipient, p.amount, p.budget, p.firstDue, p.period, p.mode, p.minRate, p.salt, p.validBefore,
         ...vrs(p.signature),
       ]);
     },
 
     closeOrder(p: { orderId: bigint; signature: Hex }) {
       return submit(escrow(), escrowAbi, "closeOrder", [p.orderId, ...vrs(p.signature)]);
+    },
+
+    /** Opens a family pot in the organizer's name (their signature fixes the terms). */
+    async createPot(p: { organizer: Address; beneficiary: Address; target: bigint; deadline: number; salt: Hex; signature: Hex }) {
+      const result = await submit(escrow(), escrowAbi, "createPot", [
+        p.organizer, p.beneficiary, p.target, p.deadline, p.salt, ...vrs(p.signature),
+      ]);
+      const receipt = await publicClient.getTransactionReceipt({ hash: result.hash });
+      const [created] = parseEventLogs({ abi: escrowAbi, logs: receipt.logs, eventName: "PotCreated" });
+      return { ...result, potId: Number((created as any).args.potId) };
+    },
+
+    /** Chips into a pot. Returns whether this contribution filled it (and paid it out). */
+    async contribute(p: { potId: bigint; from: Address; amount: bigint; validBefore: bigint; ref: Hex; signature: Hex }) {
+      const result = await submit(escrow(), escrowAbi, "contribute", [
+        p.potId, p.from, p.amount, p.validBefore, p.ref, ...vrs(p.signature),
+      ]);
+      const receipt = await publicClient.getTransactionReceipt({ hash: result.hash });
+      const released = parseEventLogs({ abi: escrowAbi, logs: receipt.logs, eventName: "PotReleased" }).length > 0;
+      return { ...result, released };
+    },
+
+    releasePot(potId: bigint) {
+      return submit(escrow(), escrowAbi, "releasePot", [potId]);
     },
 
     async gasBalance() {

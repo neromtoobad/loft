@@ -29,9 +29,14 @@ function mockRates(values: { er?: number; jsd?: number; pages?: number }) {
   return seen;
 }
 
-function mockDue(ids: bigint[]) {
+function mockDue(ids: bigint[], potIds: bigint[] = []) {
   const evm = EvmMock.testInstance(MONAD_MAINNET);
-  evm.callContract = () => ({ data: b64(encodeFunctionResult({ abi: ESCROW_ABI, functionName: "dueOrders", result: ids })) });
+  // The workflow reads dueOrders first, then duePots.
+  let call = 0;
+  evm.callContract = () =>
+    call++ % 2 === 0
+      ? { data: b64(encodeFunctionResult({ abi: ESCROW_ABI, functionName: "dueOrders", result: ids })) }
+      : { data: b64(encodeFunctionResult({ abi: ESCROW_ABI, functionName: "duePots", result: potIds })) };
   const writes: { receiver: string; payload: `0x${string}` }[] = [];
   evm.writeReport = (req: any) => {
     const raw: Uint8Array = req.report?.rawReport ?? new Uint8Array();
@@ -47,7 +52,7 @@ describe("loft standing orders workflow", () => {
     const { writes } = mockDue([]);
     const runtime = newTestRuntime();
     runtime.config = cfg;
-    expect(onCron(runtime as any)).toEqual({ due: 0 });
+    expect(onCron(runtime as any)).toEqual({ due: 0, pots: 0 });
     expect(writes).toHaveLength(0);
   });
 
@@ -65,14 +70,27 @@ describe("loft standing orders workflow", () => {
 
     // The report carries exactly what LoftEscrow.onReport decodes.
     const expected = encodeAbiParameters(
-      [{ type: "uint256[]" }, { type: "uint256" }],
-      [[0n, 3n], BigInt(Math.round(((1329.26 + 1331.5) / 2) * 1e6))],
+      [{ type: "uint256[]" }, { type: "uint256" }, { type: "uint256[]" }],
+      [[0n, 3n], BigInt(Math.round(((1329.26 + 1331.5) / 2) * 1e6)), []],
     );
     expect(writes[0].payload.endsWith(expected.slice(2))).toBe(true);
     const tail = `0x${writes[0].payload.slice(writes[0].payload.length - (expected.length - 2))}` as `0x${string}`;
-    const [ids, rate] = decodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }], tail);
+    const [ids, rate, pots] = decodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }, { type: "uint256[]" }], tail);
     expect(ids).toEqual([0n, 3n]);
     expect(rate).toBe(1330380000n);
+    expect(pots).toEqual([]);
+  });
+
+  test("releases family pots past their deadline even when no order is due", () => {
+    mockRates({ er: 1330 });
+    const { writes } = mockDue([], [2n]);
+    const runtime = newTestRuntime();
+    runtime.config = cfg;
+    const result = onCron(runtime as any);
+    expect(result).toMatchObject({ due: 0, pots: 1 });
+    expect(writes).toHaveLength(1);
+    const expected = encodeAbiParameters([{ type: "uint256[]" }, { type: "uint256" }, { type: "uint256[]" }], [[], 1330_000000n, [2n]]);
+    expect(writes[0].payload.endsWith(expected.slice(2))).toBe(true);
   });
 
   test("ignores an out-of-band source instead of letting it skew the rate", () => {

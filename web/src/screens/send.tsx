@@ -9,6 +9,7 @@ import type { Contact } from "../lib/vault.ts";
 import { useLoft } from "../state.tsx";
 import { type Creature, CreatureAvatar, Delivery, isCreature } from "../cast.tsx";
 import { Icon } from "../icons.tsx";
+import { sharePostcard } from "../lib/postcard.ts";
 import { Assure, ErrorLine, Label, Money, Postmark, TopBar, TxLink, errorText } from "./ui.tsx";
 
 type Target = { kind: "contact"; contact: Contact } | { kind: "link"; label: string };
@@ -76,6 +77,7 @@ export function Send() {
         flight={flight}
         done={done}
         amount={usdAmount}
+        note={note}
         explorer={config?.explorer}
       />
     );
@@ -235,20 +237,24 @@ export function Send() {
   );
 }
 
-function Done({
+/** The courier's flight and the receipt, shared by sends, requests and pots. */
+export function Done({
   from,
   flight,
   done,
   amount,
+  note,
   explorer,
 }: {
   from: Creature;
   flight: { to: Creature | null; toRoof: boolean; name: string };
   done: { hash: Hex; ms: number; url?: string } | null;
   amount: number;
+  note?: string;
   explorer?: string;
 }) {
-  const { rate } = useLoft();
+  const { rate, vault } = useLoft();
+  const [making, setMaking] = useState(false);
   const url = done?.url;
   const message = `I sent you ${usd(amount)} on Loft. Tap to receive it: ${url}`;
   return (
@@ -326,6 +332,27 @@ function Done({
             <TxLink hash={done.hash} explorer={explorer} />
           </div>
         </div>
+      )}
+      {done && !url && (
+        <button
+          className="secondary big postcard-btn"
+          disabled={making}
+          onClick={() => {
+            setMaking(true);
+            sharePostcard({
+              amount: usd(amount),
+              naira: rate ? `≈ ${ngn(amount * rate)}` : undefined,
+              from: vault?.name || "me",
+              to: flight.name.replace(/^@/, ""),
+              creature: flight.to,
+              seconds: seconds(done.ms),
+              hash: done.hash,
+              note,
+            }).finally(() => setMaking(false));
+          }}
+        >
+          <Icon.send size={18} /> {making ? "Making your postcard…" : "Send a postcard"}
+        </button>
       )}
       {done && (
         <button className={url ? "ghost big" : "primary big"} onClick={() => navigate("/")}>
