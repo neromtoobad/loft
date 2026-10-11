@@ -2328,7 +2328,7 @@ button.row {
 }
 
 .chart-card,
-.compare {
+.cost {
   margin: 0;
 }
 
@@ -2365,21 +2365,27 @@ button.row {
   fill: var(--air-blue);
 }
 
+.bars-wrap {
+  margin: 10px 0 6px;
+}
+
 .bars {
   display: block;
   width: 100%;
-  height: auto;
-  margin: 10px 0 6px;
+  height: 140px;
 }
 
 .bars .bar-bg {
   fill: var(--surface-2);
 }
 
-.bars .bar-axis {
+.bar-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
   font-family: var(--mono);
-  font-size: 9px;
-  fill: var(--faint);
+  font-size: 11px;
+  color: var(--faint);
 }
 
 .chart-shimmer {
@@ -2389,12 +2395,12 @@ button.row {
   margin: 10px 0;
 }
 
-.compare {
+.cost {
   display: grid;
   gap: 12px;
 }
 
-.compare-row {
+.cost-row {
   display: grid;
   grid-template-columns: 92px 1fr auto;
   align-items: center;
@@ -2402,30 +2408,30 @@ button.row {
   font-size: 14px;
 }
 
-.compare-bar {
+.cost-bar {
   height: 10px;
   border-radius: 99px;
   background: var(--surface-2);
   overflow: hidden;
 }
 
-.compare-bar span {
+.cost-bar span {
   display: block;
   height: 100%;
   border-radius: inherit;
   background: var(--ink-2);
 }
 
-.compare-row.loft strong {
+.cost-row.loft strong {
   color: var(--green);
 }
 
-.compare-row.loft .compare-bar span {
+.cost-row.loft .cost-bar span {
   background: var(--live);
   min-width: 6px;
 }
 
-.compare a {
+.cost a {
   color: inherit;
 }
 
@@ -2536,5 +2542,240 @@ button.row {
 @media (max-width: 380px) {
   .install-card.desktop {
     grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------- computer */
+/* Phones get the layout above. From 1024px Loft becomes a desktop app: a
+   sidebar instead of the tab bar, Home in two columns, forms in a readable
+   centre column, and a split welcome screen. */
+
+.sidenav {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --side: 248px;
+  }
+
+  .shell {
+    max-width: 560px;
+    padding: 36px 24px 56px;
+  }
+
+  .shell.with-side {
+    max-width: none;
+    margin: 0;
+    padding: 36px 48px 64px calc(var(--side) + 48px);
+  }
+
+  .shell.with-side > section {
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  .shell.with-side > section.home,
+  .shell.with-side > section.corridor {
+    max-width: 1100px;
+  }
+
+  .tabbar {
+    display: none;
+  }
+
+  .busy {
+    bottom: 28px;
+    left: calc(50% + var(--side) / 2);
+  }
+
+  /* The sidebar. */
+  .sidenav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 10;
+    width: var(--side);
+    padding: 28px 16px 20px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+  }
+
+  .sidenav .brand {
+    justify-content: flex-start;
+    min-height: 0;
+    padding: 2px 12px 22px;
+    background: none;
+    color: var(--ink);
+  }
+
+  .sidenav-items {
+    display: grid;
+    gap: 2px;
+  }
+
+  .sidenav-items button,
+  .sidenav-lock {
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .sidenav-items button:hover,
+  .sidenav-lock:hover {
+    background: var(--surface-2);
+  }
+
+  .sidenav-items button.on {
+    background: var(--ink);
+    color: #fff;
+  }
+
+  .sidenav-me {
+    margin-top: auto;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    text-align: left;
+  }
+
+  .sidenav-me.on {
+    box-shadow: inset 0 0 0 1.5px var(--ink);
+  }
+
+  .sidenav-me span:last-child {
+    display: grid;
+    line-height: 1.25;
+    font-size: 14.5px;
+  }
+
+  .sidenav-me small {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  .sidenav-lock {
+    min-height: 38px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Screens with their own back button don't need it beside a sidebar's Home. */
+  .shell.with-side .topbar {
+    margin-top: -4px;
+  }
+
+  /* Home: money and actions on the left, family and activity on the right. */
+  .home-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .home-side {
+    position: sticky;
+    top: 24px;
+  }
+
+  .home-side .family:first-child,
+  .home-side .recent:first-child {
+    margin-top: 0;
+  }
+
+  .home .app-head .avatar {
+    display: none;
+  }
+
+  /* Corridor: four numbers in a row. */
+  .corridor .stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .shell.with-side .corridor-head {
+    display: none;
+  }
+
+  /* Welcome: the promise on the left, getting started on the right. */
+  .shell:has(> .welcome) {
+    max-width: 1160px;
+    padding: 28px 40px 56px;
+  }
+
+  .welcome {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    column-gap: 28px;
+    row-gap: 16px;
+    align-items: start;
+  }
+
+  .welcome > .brand-bar,
+  .welcome > .compare,
+  .welcome > .fineprint {
+    grid-column: 1 / -1;
+  }
+
+  .welcome > .welcome-hero {
+    grid-column: 1;
+    grid-row: 2 / span 3;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 560px;
+    padding: 40px 44px;
+  }
+
+  .welcome-hero .display {
+    font-size: 66px;
+  }
+
+  .welcome-hero .welcome-courier {
+    justify-content: flex-start;
+  }
+
+  .welcome > .form-card,
+  .welcome > .install-card {
+    grid-column: 2;
+    margin: 0;
+  }
+
+  .welcome > .compare {
+    max-width: 760px;
+    justify-self: center;
+    width: 100%;
+  }
+
+  /* Public pages (a claim, a request, a pot) stay a centred card. */
+  .shell:not(.with-side):not(:has(> .welcome)) {
+    max-width: 520px;
+  }
+
+  .install-card.desktop {
+    grid-template-columns: 148px 1fr;
+  }
+
+  .install-copy .primary {
+    margin-top: 6px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .way:hover,
+  .member:hover,
+  .row.activity:hover {
+    background: var(--surface-2);
   }
 }

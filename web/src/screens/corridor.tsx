@@ -23,29 +23,30 @@ function Bars({ days }: { days: Corridor["days"] }) {
   const gap = 2;
   const w = (W - gap * (days.length - 1)) / days.length;
   return (
-    <svg className="bars" viewBox={`0 0 ${W} ${H + 18}`} role="img" aria-label="Daily volume, last 30 days">
-      {days.map((d, i) => {
-        const sent = (Number(d.volume) / max) * H;
-        const inflow = (Number(d.topupVolume) / max) * H;
-        const x = i * (w + gap);
-        return (
-          <g key={d.day}>
-            <title>
-              {d.day}: {usd(d.volume)} sent{Number(d.topupVolume) ? `, ${usd(d.topupVolume)} arrived from other chains` : ""}
-            </title>
-            <rect x={x} y={0} width={w} height={H} rx={2} className="bar-bg" />
-            <rect x={x} y={H - sent} width={w} height={sent} rx={2} className="bar-sent" />
-            <rect x={x} y={H - sent - inflow} width={w} height={inflow} rx={2} className="bar-in" />
-          </g>
-        );
-      })}
-      <text x={0} y={H + 14} className="bar-axis">
-        {days[0]?.day.slice(5)}
-      </text>
-      <text x={W} y={H + 14} textAnchor="end" className="bar-axis">
-        Today
-      </text>
-    </svg>
+    <div className="bars-wrap">
+      {/* Stretches to the card's width at a fixed height, so it reads the same on a phone and a monitor. */}
+      <svg className="bars" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Daily volume, last 30 days">
+        {days.map((d, i) => {
+          const sent = (Number(d.volume) / max) * H;
+          const inflow = (Number(d.topupVolume) / max) * H;
+          const x = i * (w + gap);
+          return (
+            <g key={d.day}>
+              <title>
+                {d.day}: {usd(d.volume)} sent{Number(d.topupVolume) ? `, ${usd(d.topupVolume)} arrived from other chains` : ""}
+              </title>
+              <rect x={x} y={0} width={w} height={H} className="bar-bg" />
+              <rect x={x} y={H - sent} width={w} height={sent} className="bar-sent" />
+              <rect x={x} y={H - sent - inflow} width={w} height={inflow} className="bar-in" />
+            </g>
+          );
+        })}
+      </svg>
+      <div className="bar-axis">
+        <span>{days[0]?.day.slice(5)}</span>
+        <span>Today</span>
+      </div>
+    </div>
   );
 }
 
@@ -133,18 +134,18 @@ export function CorridorPage() {
         )}
       </div>
 
-      <div className="card compare">
+      <div className="card cost">
         <h3>Sending $200 home</h3>
-        <div className="compare-row">
+        <div className="cost-row">
           <span>The usual way</span>
-          <span className="compare-bar">
+          <span className="cost-bar">
             <span style={{ width: "100%" }} />
           </span>
           <strong>{usd(bench200)}</strong>
         </div>
-        <div className="compare-row loft">
+        <div className="cost-row loft">
           <span>Loft</span>
-          <span className="compare-bar">
+          <span className="cost-bar">
             <span style={{ width: "2%" }} />
           </span>
           <strong>$0.00</strong>

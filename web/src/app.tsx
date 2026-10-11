@@ -12,7 +12,8 @@ import { Schedule } from "./screens/schedule.tsx";
 import { Send } from "./screens/send.tsx";
 import { Welcome } from "./screens/welcome.tsx";
 import { useLoft } from "./state.tsx";
-import { isCreature } from "./cast.tsx";
+import { CreatureAvatar, isCreature } from "./cast.tsx";
+import { LoftMark } from "./screens/ui.tsx";
 
 export type Route = "/" | "/send" | "/schedule" | "/me" | "/add" | "/c" | "/ask" | "/r" | "/pots" | "/p" | "/corridor";
 
@@ -59,9 +60,12 @@ export function App() {
 
   // The tab bar belongs to the signed-in app; flows (send, claim, sign-up) get the whole screen.
   const tabs = Boolean(session && vault) && ["/", "/schedule", "/me", "/add"].includes(route);
+  // On a computer, a sidebar replaces the tab bar on every signed-in screen except claiming a link.
+  const side = Boolean(session && vault) && route !== "/c";
 
   return (
-    <main className={`shell ${tabs ? "" : "no-tabs"}`}>
+    <main className={`shell ${tabs ? "" : "no-tabs"} ${side ? "with-side" : ""} route-${route.slice(1) || "home"}`}>
+      {side && <SideNav route={route} />}
       {screen}
       {tabs && <TabBar route={route} />}
       {busy && (
@@ -91,6 +95,49 @@ function TabBar({ route }: { route: Route }) {
           </button>
         );
       })}
+    </nav>
+  );
+}
+
+/** Navigation on a computer: everything one click away, in a column on the left. */
+function SideNav({ route }: { route: Route }) {
+  const { vault, lock } = useLoft();
+  const items: { to: string; match: Route; label: string; icon: keyof typeof Icon }[] = [
+    { to: "/", match: "/", label: "Home", icon: "home" },
+    { to: "/send", match: "/send", label: "Send", icon: "send" },
+    { to: "/add", match: "/add", label: "Add money", icon: "plus" },
+    { to: "/schedule", match: "/schedule", label: "Schedule", icon: "calendar" },
+    { to: "/ask", match: "/ask", label: "Ask the family", icon: "receive" },
+    { to: "/pots", match: "/pots", label: "Family pots", icon: "user" },
+    { to: "/corridor", match: "/corridor", label: "Corridor stats", icon: "arrow" },
+  ];
+  return (
+    <nav className="sidenav" aria-label="Main">
+      <button className="brand" onClick={() => navigate("/")}>
+        <LoftMark size={26} /> Loft
+      </button>
+      <div className="sidenav-items">
+        {items.map((it) => {
+          const Glyph = Icon[it.icon];
+          const on = route === it.match || (it.match === "/pots" && route === "/p") || (it.match === "/ask" && route === "/r");
+          return (
+            <button key={it.to} className={on ? "on" : ""} aria-current={on ? "page" : undefined} onClick={() => navigate(it.to)}>
+              <Glyph size={19} />
+              <span>{it.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <button className={`sidenav-me ${route === "/me" ? "on" : ""}`} onClick={() => navigate("/me")}>
+        <CreatureAvatar kind={vault?.character} name={vault?.name ?? ""} size={34} />
+        <span>
+          <strong>{vault?.name}</strong>
+          <small>{vault?.handle ? `@${vault.handle}` : "Your account"}</small>
+        </span>
+      </button>
+      <button className="sidenav-lock" onClick={() => (lock(), navigate("/"))}>
+        <Icon.lock size={16} /> Lock
+      </button>
     </nav>
   );
 }

@@ -10,7 +10,7 @@ export function errorText(e: unknown): string {
   const err = e as { name?: string; code?: string; message?: string };
   if (err?.name === "NotAllowedError" || err?.code === "PASSKEY_OPERATION_FAILED") return "Passkey was cancelled.";
   if (err?.code === "PRF_UNAVAILABLE")
-    return "This device's passkeys can't make Loft keys yet. Try iCloud Keychain on iOS 18+, Google Password Manager on Android, or 1Password.";
+    return "This device's passkeys can't make Loft keys yet. On a phone, use iCloud Keychain (iOS 18+) or Google Password Manager. On a computer, use Safari with iCloud Keychain, Chrome with Google Password Manager, or 1Password; or open Loft on your phone.";
   return err?.message ?? "Something went wrong.";
 }
 

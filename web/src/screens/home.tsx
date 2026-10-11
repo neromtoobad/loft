@@ -57,159 +57,165 @@ export function Home() {
         </button>
       </header>
 
-      <div className="hero" data-creature={creature}>
-        <div className="hero-top">
-          <Label>Your dollars</Label>
-          <div className="seg" role="tablist" aria-label="Show balance in">
-            {(["USD", "NGN"] as const).map((c) => (
-              <button key={c} role="tab" aria-selected={show === c} className={show === c ? "on" : ""} onClick={() => setShow(c)} disabled={c === "NGN" && !rate}>
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="hero-amount">
-          {dollars === null ? (
-            <span className="shimmer" aria-label="Loading balance" />
-          ) : show === "NGN" && rate ? (
-            <Money value={dollars * rate} currency="NGN" />
-          ) : (
-            <Money value={dollars} />
-          )}
-        </div>
-        <p className="hero-sub">
-          {dollars !== null && rate ? (show === "USD" ? `≈ ${ngn(dollars * rate)} today` : `${usd(dollars)} held as AUSD`) : "Held as AUSD on Monad"}
-        </p>
-        <p className="hero-sub dim">
-          <Icon.lock size={13} /> Only your passkey can move it
-        </p>
-        <p className="hero-meta">
-          Sent {usd(total("out"))} · Received {usd(total("in"))} · 30 days
-        </p>
-        <div className="hero-creature" aria-hidden>
-          <CreatureSprite kind={creature} pose={pose} size={128} label={`Your ${creature}`} />
-        </div>
-        <div className="hero-actions">
-          <button className="pill light" onClick={() => navigate("/send")}>
-            Send
-          </button>
-          <button className="pill glass" onClick={() => navigate("/send?link=1")}>
-            Link
-          </button>
-          <button className="pill glass" onClick={() => navigate("/add")}>
-            Add
-          </button>
-        </div>
-      </div>
-
-      <UsdcWaiting />
-
-      <NextUp outgoing={outgoing} />
-
-      <div className="ways">
-        <button className="way" onClick={() => navigate("/ask")}>
-          <span className="way-icon">
-            <Icon.receive size={18} />
-          </span>
-          <strong>Ask the family</strong>
-          <span>Request, they pay</span>
-        </button>
-        <button className="way" onClick={() => navigate("/pots")}>
-          <span className="way-icon">
-            <Icon.user size={18} />
-          </span>
-          <strong>Family pot</strong>
-          <span>Chip in together</span>
-        </button>
-        <button className="way" onClick={() => navigate("/schedule?mode=rate")}>
-          <span className="way-icon">
-            <Icon.dollar size={18} />
-          </span>
-          <strong>At a rate</strong>
-          <span>Send when ₦ is right</span>
-        </button>
-      </div>
-
-      <Ask />
-
-      <InstallCard where="home" />
-
-      {vault.contacts.length > 0 && (
-        <div className="family">
-          <div className="section-head">
-            <h3>Family</h3>
-            <Label>{vault.contacts.length} on Loft</Label>
-          </div>
-          <div className="family-strip">
-            {vault.contacts.slice(0, 12).map((c) => {
-              const last = activity.find((a) => a.other?.toLowerCase() === c.address.toLowerCase());
-              return (
-                <button key={c.address} className="member" onClick={() => navigate(`/send?to=${encodeURIComponent(c.name)}`)}>
-                  <CreatureAvatar kind={c.character} name={c.name} />
-                  <span className="member-name">{c.name.replace(/^@/, "")}</span>
-                  <span className={`member-last ${last?.dir ?? ""}`}>
-                    {last ? `${last.dir === "in" ? "+" : "−"}${usd(last.amount)}` : "Say hi"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="card recent">
-        <div className="card-head">
-          <h3>Recent</h3>
-          <Label>Newest first</Label>
-        </div>
-        {activity.length === 0 ? (
-          <p className="empty">Nothing yet. Send someone a few dollars and it shows up here.</p>
-        ) : (
-          <div className="list">
-            {activity.map((a, i) => {
-              const who = contact(a.other);
-              const day = dayLabel(a.at);
-              return (
-                <div key={a.key}>
-                  {(i === 0 || dayLabel(activity[i - 1].at) !== day) && <div className="day">{day}</div>}
-                  <button className="row activity" onClick={() => setOpen(open === a.key ? null : a.key)} aria-expanded={open === a.key}>
-                    <span className={`glyph ${a.dir}`} data-creature={isCreature(who?.character) ? who.character : undefined} aria-hidden>
-                      {isCreature(who?.character) ? (
-                        <img src={`/cast/${who.character}/idle.webp`} alt="" className="glyph-img" />
-                      ) : a.dir === "in" ? (
-                        <Icon.receive size={18} />
-                      ) : a.sent?.kind === "link" ? (
-                        <Icon.link size={18} />
-                      ) : (
-                        <Icon.send size={18} />
-                      )}
-                    </span>
-                    <span className="who">
-                      {a.label}
-                      <small>
-                        {a.note ? `“${a.note}” · ` : ""}
-                        {a.ngn ? `≈ ${ngn(a.ngn.value)} · ` : ""}
-                        {ago(a.at)}
-                      </small>
-                    </span>
-                    <span className={`amt ${a.dir}`}>
-                      {a.dir === "in" ? "+" : "−"}
-                      {usd(a.amount)}
-                    </span>
+      <div className="home-grid">
+        <div className="home-main">
+          <div className="hero" data-creature={creature}>
+            <div className="hero-top">
+              <Label>Your dollars</Label>
+              <div className="seg" role="tablist" aria-label="Show balance in">
+                {(["USD", "NGN"] as const).map((c) => (
+                  <button key={c} role="tab" aria-selected={show === c} className={show === c ? "on" : ""} onClick={() => setShow(c)} disabled={c === "NGN" && !rate}>
+                    {c}
                   </button>
-                  {open === a.key &&
-                    (a.sent?.kind === "link" && a.sent.claimSecret ? (
-                      <LinkDetail item={a.sent} />
-                    ) : (
-                      <div className="detail">
-                        <TxLink hash={a.txHash} explorer={config?.explorer} />
-                      </div>
-                    ))}
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            </div>
+            <div className="hero-amount">
+              {dollars === null ? (
+                <span className="shimmer" aria-label="Loading balance" />
+              ) : show === "NGN" && rate ? (
+                <Money value={dollars * rate} currency="NGN" />
+              ) : (
+                <Money value={dollars} />
+              )}
+            </div>
+            <p className="hero-sub">
+              {dollars !== null && rate ? (show === "USD" ? `≈ ${ngn(dollars * rate)} today` : `${usd(dollars)} held as AUSD`) : "Held as AUSD on Monad"}
+            </p>
+            <p className="hero-sub dim">
+              <Icon.lock size={13} /> Only your passkey can move it
+            </p>
+            <p className="hero-meta">
+              Sent {usd(total("out"))} · Received {usd(total("in"))} · 30 days
+            </p>
+            <div className="hero-creature" aria-hidden>
+              <CreatureSprite kind={creature} pose={pose} size={128} label={`Your ${creature}`} />
+            </div>
+            <div className="hero-actions">
+              <button className="pill light" onClick={() => navigate("/send")}>
+                Send
+              </button>
+              <button className="pill glass" onClick={() => navigate("/send?link=1")}>
+                Link
+              </button>
+              <button className="pill glass" onClick={() => navigate("/add")}>
+                Add
+              </button>
+            </div>
           </div>
-        )}
+
+          <UsdcWaiting />
+
+          <NextUp outgoing={outgoing} />
+
+          <div className="ways">
+            <button className="way" onClick={() => navigate("/ask")}>
+              <span className="way-icon">
+                <Icon.receive size={18} />
+              </span>
+              <strong>Ask the family</strong>
+              <span>Request, they pay</span>
+            </button>
+            <button className="way" onClick={() => navigate("/pots")}>
+              <span className="way-icon">
+                <Icon.user size={18} />
+              </span>
+              <strong>Family pot</strong>
+              <span>Chip in together</span>
+            </button>
+            <button className="way" onClick={() => navigate("/schedule?mode=rate")}>
+              <span className="way-icon">
+                <Icon.dollar size={18} />
+              </span>
+              <strong>At a rate</strong>
+              <span>Send when ₦ is right</span>
+            </button>
+          </div>
+
+          <Ask />
+
+          <InstallCard where="home" />
+        </div>
+
+        <aside className="home-side">
+          {vault.contacts.length > 0 && (
+            <div className="family">
+              <div className="section-head">
+                <h3>Family</h3>
+                <Label>{vault.contacts.length} on Loft</Label>
+              </div>
+              <div className="family-strip">
+                {vault.contacts.slice(0, 12).map((c) => {
+                  const last = activity.find((a) => a.other?.toLowerCase() === c.address.toLowerCase());
+                  return (
+                    <button key={c.address} className="member" onClick={() => navigate(`/send?to=${encodeURIComponent(c.name)}`)}>
+                      <CreatureAvatar kind={c.character} name={c.name} />
+                      <span className="member-name">{c.name.replace(/^@/, "")}</span>
+                      <span className={`member-last ${last?.dir ?? ""}`}>
+                        {last ? `${last.dir === "in" ? "+" : "−"}${usd(last.amount)}` : "Say hi"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="card recent">
+            <div className="card-head">
+              <h3>Recent</h3>
+              <Label>Newest first</Label>
+            </div>
+            {activity.length === 0 ? (
+              <p className="empty">Nothing yet. Send someone a few dollars and it shows up here.</p>
+            ) : (
+              <div className="list">
+                {activity.map((a, i) => {
+                  const who = contact(a.other);
+                  const day = dayLabel(a.at);
+                  return (
+                    <div key={a.key}>
+                      {(i === 0 || dayLabel(activity[i - 1].at) !== day) && <div className="day">{day}</div>}
+                      <button className="row activity" onClick={() => setOpen(open === a.key ? null : a.key)} aria-expanded={open === a.key}>
+                        <span className={`glyph ${a.dir}`} data-creature={isCreature(who?.character) ? who.character : undefined} aria-hidden>
+                          {isCreature(who?.character) ? (
+                            <img src={`/cast/${who.character}/idle.webp`} alt="" className="glyph-img" />
+                          ) : a.dir === "in" ? (
+                            <Icon.receive size={18} />
+                          ) : a.sent?.kind === "link" ? (
+                            <Icon.link size={18} />
+                          ) : (
+                            <Icon.send size={18} />
+                          )}
+                        </span>
+                        <span className="who">
+                          {a.label}
+                          <small>
+                            {a.note ? `“${a.note}” · ` : ""}
+                            {a.ngn ? `≈ ${ngn(a.ngn.value)} · ` : ""}
+                            {ago(a.at)}
+                          </small>
+                        </span>
+                        <span className={`amt ${a.dir}`}>
+                          {a.dir === "in" ? "+" : "−"}
+                          {usd(a.amount)}
+                        </span>
+                      </button>
+                      {open === a.key &&
+                        (a.sent?.kind === "link" && a.sent.claimSecret ? (
+                          <LinkDetail item={a.sent} />
+                        ) : (
+                          <div className="detail">
+                            <TxLink hash={a.txHash} explorer={config?.explorer} />
+                          </div>
+                        ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </section>
   );

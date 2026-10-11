@@ -91,7 +91,8 @@ export function InstallSteps() {
   );
 }
 
-function OpenOnPhone() {
+/** On a computer: install Loft here (Chrome and Edge), or scan to open it on a phone. */
+function OnComputer({ canPrompt, prompt }: { canPrompt: boolean; prompt: () => Promise<boolean> }) {
   const url = location.origin;
   const svg = useMemo(() => {
     const qr = qrcode(0, "M");
@@ -99,17 +100,34 @@ function OpenOnPhone() {
     qr.make();
     return qr.createSvgTag({ cellSize: 5, margin: 1, scalable: true });
   }, [url]);
+  const safari = /Safari/.test(navigator.userAgent) && !/Chrome|Chromium|Edg/.test(navigator.userAgent);
   return (
     <div className="card install-card desktop">
       <div className="install-qr" aria-label={`QR code for ${url}`} dangerouslySetInnerHTML={{ __html: svg }} />
-      <div>
+      <div className="install-copy">
         <Label>Web app · no download</Label>
-        <h3>Loft lives on your phone</h3>
+        <h3>Use Loft here, or on your phone</h3>
         <p className="muted small">
-          Scan with your phone's camera to open Loft, then add it to your Home Screen. There's nothing to get from an app store. It works here too
-          if this browser has passkeys.
+          Loft runs in your browser on any computer or phone. {canPrompt ? "Install it to open it from your dock or Start menu, or scan" : "Scan"} with your
+          phone's camera to carry it with you.
         </p>
-        <span className="mono small install-url">{url.replace(/^https?:\/\//, "")}</span>
+        {canPrompt ? (
+          <button className="primary" onClick={() => prompt()}>
+            Install Loft on this computer
+          </button>
+        ) : (
+          <p className="muted small install-hint">
+            {safari ? (
+              <>
+                To keep it in your Dock: <strong>File → Add to Dock</strong>.
+              </>
+            ) : (
+              <>
+                To install it: the install icon at the right of the address bar, or <strong>⋮ → Cast, save and share → Install</strong>.
+              </>
+            )}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -125,7 +143,7 @@ export function InstallCard({ where }: { where: "welcome" | "home" | "me" }) {
   const [open, setOpen] = useState(where === "me");
   const [hidden, setHidden] = useState(() => where === "home" && wasDismissed());
   if (installed || hidden) return null;
-  if (platform === "desktop") return where === "welcome" ? <OpenOnPhone /> : null;
+  if (platform === "desktop") return where === "home" && !canPrompt ? null : <OnComputer canPrompt={canPrompt} prompt={prompt} />;
 
   return (
     <div className={`card install-card ${where}`}>
