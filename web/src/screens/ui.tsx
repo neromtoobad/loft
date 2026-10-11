@@ -3,6 +3,7 @@ import { navigate } from "../app.tsx";
 import { Icon } from "../icons.tsx";
 import { ApiError } from "../lib/api.ts";
 import { ngn, usdParts } from "../lib/format.ts";
+import { COIN, markPath } from "../../../shared/brand.ts";
 import { isCreature } from "../cast.tsx";
 
 export function errorText(e: unknown): string {
@@ -93,16 +94,16 @@ export function Point({ icon, children }: { icon: "lock" | "check" | "phone" | "
   );
 }
 
-/** The mark: a loft roof over a doorway, with the courier's orange at its heart. */
+/** The mark: the door of a pigeon loft, with the courier home inside as an orange coin (shared/brand.ts). */
 export function LoftMark({ size = 24 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 28 28" width={size} height={size} aria-hidden>
-      <path d="M3 13.5 14 4l11 9.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7 12v11.5h14V12" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
-      <circle cx="14" cy="15.5" r="2.3" fill="var(--accent)" />
+    <svg viewBox="10 10 80 80" width={size} height={size} aria-hidden>
+      <path d={MARK} fill="currentColor" />
+      <circle cx={COIN.cx} cy={COIN.cy} r={COIN.r} fill="var(--accent)" />
     </svg>
   );
 }
+const MARK = markPath();
 
 /** A postage stamp with perforated edges, carrying someone's creature (or the Loft mark). */
 export function Stamp({ kind, value }: { kind?: string | null; value?: string }) {

@@ -63,3 +63,14 @@ characters into the sheet as ghosts.
 | 2026-10-11 | Background removal, five sheets | (charged by Higgsfield) |
 | 2026-10-11 | Pangolin, tortoise, hornbill (back, now in 3D), honey badger, chameleon | 10 |
 | 2026-10-11 | Background removal, five more sheets | (charged by Higgsfield) |
+
+## Logo (Oct 11)
+
+The mark is the door of a pigeon loft with the courier home inside as an orange coin. Its geometry lives in `shared/brand.ts`, and `npx tsx scripts/logo.ts` draws every brand file from it:
+- `art/logo.png`: the 1024 square for the hackathon portal;
+- `art/logo-mark.png` and `art/logo-wide.png`;
+- `web/public/icon.svg`: the favicon, which turns white in dark mode;
+- the app icons (180, 192, 512 and maskable 512);
+- `web/public/og.png`: the link-preview card.
+
+The wordmark is Geist Medium (`art/fonts/`, SIL Open Font License). The earlier perched-courier image is kept as `art/mascot.png` (`scripts/mascot.ts`).

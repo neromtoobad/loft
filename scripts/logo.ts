@@ -1,54 +1,75 @@
-// The Loft logo: the courier perched on a loft roof, cut at full resolution
-// from the background-removed pose sheet (art/sheets/cut/pigeon.png, pose 3
-// of 2 rows × 3 columns) and set on the app's sand colour. Writes art/logo.png.
-import sharp from "sharp";
-import { components } from "./components.ts";
+// Draws every Loft brand file from the one geometry in shared/brand.ts:
+// the favicon, the app icons, the social preview and the logo files.
+//
+//   npx tsx scripts/logo.ts
+import { readFileSync, writeFileSync } from "node:fs";
+import { Resvg } from "@resvg/resvg-js";
+import { BRAND, COIN, doorPath, markPath } from "../shared/brand.ts";
 
-const SIZE = 1024;
-const SAND = "#f7f3ec";
-const KEEP = 0.03; // like the slicer: drop labels and stray bits from neighbouring poses
+const { ink, paper, orange } = BRAND;
+const FONT = "art/fonts/Geist-500.ttf";
 
-const src = "art/sheets/cut/pigeon.png";
-const { data, info } = await sharp(src).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-const { width: w, height: h, channels } = info;
-const alpha = new Uint8Array(w * h);
-for (let i = 0; i < w * h; i++) alpha[i] = data[i * channels + 3];
+function png(svg: string, out: string) {
+  const data = new Resvg(svg, { font: { fontFiles: [FONT], loadSystemFonts: false, defaultFontFamily: "Geist" } }).render().asPng();
+  writeFileSync(out, data);
+  console.log(`${out}  ${(data.length / 1024).toFixed(0)} KB`);
+}
 
-// Shapes whose centre is in row 0, column 2 (the perch pose).
-const mine = components(alpha, w, h).filter((b) => Math.floor((b.cx / w) * 3) === 2 && Math.floor((b.cy / h) * 2) === 0);
-const biggest = Math.max(...mine.map((b) => b.area));
-const kept = mine.filter((b) => b.area >= biggest * KEEP);
-const x0 = Math.min(...kept.map((b) => b.x0));
-const y0 = Math.min(...kept.map((b) => b.y0));
-const x1 = Math.max(...kept.map((b) => b.x1));
-const y1 = Math.max(...kept.map((b) => b.y1));
+const coin = `<circle cx="${COIN.cx}" cy="${COIN.cy}" r="${COIN.r}" fill="${orange}"/>`;
 
-// Keep only pixels that belong to a kept shape's box, so nothing from the next pose sneaks in.
-const cw = x1 - x0 + 1;
-const ch = y1 - y0 + 1;
-const crop = Buffer.alloc(cw * ch * 4);
-for (let y = 0; y < ch; y++)
-  for (let x = 0; x < cw; x++) {
-    const sx = x0 + x;
-    const sy = y0 + y;
-    const s = (sy * w + sx) * channels;
-    const d = (y * cw + x) * 4;
-    const inside = kept.some((b) => sx >= b.x0 && sx <= b.x1 && sy >= b.y0 && sy <= b.y1);
-    crop[d] = data[s];
-    crop[d + 1] = data[s + 1];
-    crop[d + 2] = data[s + 2];
-    crop[d + 3] = inside ? data[s + 3] : 0;
-  }
+/** The mark in its 100×100 box, at (x, y) and `size` pixels. `door` fills the doorway (else it's see-through). */
+function mark(x: number, y: number, size: number, door?: string) {
+  return `<g transform="translate(${x} ${y}) scale(${size / 100})">
+    <path d="${markPath()}" fill="${ink}"/>${door ? `<path d="${doorPath()}" fill="${door}"/>` : ""}${coin}</g>`;
+}
 
-const bird = await sharp(crop, { raw: { width: cw, height: ch, channels: 4 } })
-  .resize({ height: Math.round(SIZE * 0.78), width: Math.round(SIZE * 0.84), fit: "inside", withoutEnlargement: true })
-  .png()
-  .toBuffer();
-const meta = await sharp(bird).metadata();
+const wordmark = (x: number, y: number, size: number, fill = ink, anchor = "start") =>
+  `<text x="${x}" y="${y}" font-family="Geist" font-weight="500" font-size="${size}" letter-spacing="${-size * 0.04}" fill="${fill}" text-anchor="${anchor}">Loft</text>`;
 
-await sharp({ create: { width: SIZE, height: SIZE, channels: 4, background: SAND } })
-  .composite([{ input: bird, left: Math.round((SIZE - meta.width!) / 2), top: Math.round((SIZE - meta.height!) / 2 + SIZE * 0.02) }])
-  .png({ compressionLevel: 9 })
-  .toFile("art/logo.png");
+// Favicon: the mark alone, white instead of black when the browser is dark.
+writeFileSync(
+  "web/public/icon.svg",
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 10 80 80"><style>path{fill:${ink}}@media (prefers-color-scheme:dark){path{fill:#fff}}</style><path d="${markPath()}"/>${coin}</svg>\n`,
+);
+console.log("web/public/icon.svg");
 
-console.log(`art/logo.png ${SIZE}×${SIZE}, bird ${meta.width}×${meta.height} from ${cw}×${ch}, kept ${kept.length}/${mine.length} shapes`);
+// Home-screen icons. The phone rounds the corners itself, so these fill the
+// square: black, with the doorway open at the bottom edge and the coin inside.
+const fullBleed = (px: number) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="10 10 80 80">
+    <path d="${markPath(10, 0)}" fill="${ink}"/><path d="${doorPath()}" fill="${paper}"/>${coin}</svg>`;
+png(fullBleed(180), "web/public/icon-180.png");
+png(fullBleed(512), "web/public/icon-maskable-512.png");
+// Install icons for browsers that show them as-is: the rounded mark itself.
+const rounded = (px: number) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}" viewBox="10 10 80 80"><path d="${markPath()}" fill="${ink}"/><path d="${doorPath()}" fill="${paper}"/>${coin}</svg>`;
+png(rounded(192), "web/public/icon-192.png");
+png(rounded(512), "web/public/icon-512.png");
+
+// The hackathon logo: mark over the wordmark, square, on paper.
+png(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="${paper}"/>
+    ${mark(512 - 220, 210, 440, paper)}${wordmark(512, 820, 170, ink, "middle")}</svg>`,
+  "art/logo.png",
+);
+// The mark alone, and a wide lockup for headers and slides.
+png(`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" fill="${paper}"/>${mark(112, 112, 800, paper)}</svg>`, "art/logo-mark.png");
+png(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="560"><rect width="1600" height="560" fill="${paper}"/>
+    ${mark(170, 100, 360, paper)}${wordmark(600, 375, 260)}</svg>`,
+  "art/logo-wide.png",
+);
+
+// Link previews (WhatsApp, X, iMessage): what people see before they open a Loft link.
+png(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="${paper}"/>
+    ${mark(96, 96, 150, paper)}${wordmark(268, 205, 92)}
+    <text x="96" y="400" font-family="Geist" font-weight="500" font-size="76" letter-spacing="-3.4" fill="${ink}">Send dollars home</text>
+    <text x="96" y="488" font-family="Geist" font-weight="500" font-size="76" letter-spacing="-3.4" fill="${ink}" fill-opacity="0.45">in one tap.</text>
+    <circle cx="104" cy="551" r="8" fill="#2fbf71"/>
+    <text x="124" y="560" font-family="Geist" font-weight="500" font-size="26" letter-spacing="2" fill="${ink}" fill-opacity="0.55">LIVE ON MONAD · AUSD · NO APP NEEDED</text></svg>`,
+  "web/public/og.png",
+);
+
+const manifest = JSON.parse(readFileSync("web/public/manifest.webmanifest", "utf8"));
+console.log(`manifest icons: ${manifest.icons.map((i: { src: string }) => i.src).join(", ")}`);
