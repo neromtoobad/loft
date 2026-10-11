@@ -1,21 +1,21 @@
-/* Loft. Airmail, done quietly: a warm paper canvas, white cards, one warm
-   espresso card per screen for the money, Instrument Serif headlines over
-   Inter numerals with quiet cents, IBM Plex Mono labels, and the airmail
-   stripe, stamp and postmark as the only ornament. The cast is lit inside the
-   dark cards; their colours survive only as glows, tints and stamps. */
+/* Loft. Light, quiet and exact: a neutral canvas, white cards, one dark hero
+   card per screen for the money, thin Geist numerals and headlines with quiet
+   cents, small uppercase Geist Mono labels, and a single orange accent. The
+   airmail stripe, stamp and postmark are the only ornament. The cast is lit
+   inside the dark cards; their colours survive only as glows and tints. */
 
 :root {
-  --canvas: #f4f1ea;
+  --canvas: #f2f2f0;
   --surface: #ffffff;
-  --surface-2: #f7f4ee;
-  --ink: #16120e;
-  --ink-2: #3e3832;
-  --muted: rgba(22, 18, 14, 0.56);
-  --faint: rgba(22, 18, 14, 0.38);
-  --line: rgba(22, 18, 14, 0.08);
-  --line-2: rgba(22, 18, 14, 0.14);
-  --accent: #e4572e;
-  --air-red: #e4572e;
+  --surface-2: #f6f6f4;
+  --ink: #0b0b0c;
+  --ink-2: #3a3a3e;
+  --muted: rgba(11, 11, 12, 0.54);
+  --faint: rgba(11, 11, 12, 0.36);
+  --line: rgba(11, 11, 12, 0.08);
+  --line-2: rgba(11, 11, 12, 0.14);
+  --accent: #ff5b1f;
+  --air-red: #ff5b1f;
   --air-blue: #24325c;
   --live: #2fbf71;
   --green: #0f7a4a;
@@ -24,11 +24,12 @@
   --radius: 28px;
   --radius-md: 22px;
   --radius-sm: 16px;
-  --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Headlines share the sans; the name is kept so every headline rule still points here. */
+  --serif: "Geist", "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sans: "Geist", "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --tabbar: 96px;
-  --dark: radial-gradient(120% 95% at 78% 12%, #3b2d23 0%, #1b140f 55%, #0e0a07 100%);
+  --dark: radial-gradient(120% 95% at 78% 12%, #2b2b30 0%, #0e0e10 55%, #000 100%);
 
   /* The cast's colours, used for glows and tints only. */
   --c1: #ffc46b;
@@ -847,7 +848,7 @@ button.row {
   -webkit-backdrop-filter: blur(16px);
   box-shadow:
     inset 0 0 0 1px var(--line),
-    0 16px 36px -18px rgba(22, 18, 14, 0.35);
+    0 16px 36px -18px rgba(11, 11, 12, 0.35);
 }
 
 .tabbar button {
@@ -1782,7 +1783,7 @@ button.row {
   top: 70px;
   right: 30px;
   width: 104px;
-  color: rgba(22, 18, 14, 0.5);
+  color: rgba(11, 11, 12, 0.5);
   transform: rotate(-12deg);
 }
 
@@ -1808,7 +1809,7 @@ button.row {
   width: 70px;
   padding: 7px 7px 6px;
   background: var(--c-soft);
-  box-shadow: inset 0 0 0 1px rgba(22, 18, 14, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(11, 11, 12, 0.06);
   -webkit-mask:
     radial-gradient(circle var(--r), #0000 96%, #000) calc(-1 * var(--r)) calc(-1 * var(--r)) / 8px 8px round,
     linear-gradient(#000 0 0) 5px 5px / calc(100% - 10px) calc(100% - 10px) no-repeat;
@@ -1914,7 +1915,7 @@ button.row {
   top: 8px;
   right: 14px;
   width: 104px;
-  color: rgba(228, 87, 46, 0.55);
+  color: rgba(255, 91, 31, 0.55);
   transform: rotate(-10deg);
   pointer-events: none;
 }
@@ -2182,7 +2183,7 @@ button.row {
 
 .track li.now .dot {
   background: var(--accent);
-  box-shadow: 0 0 0 4px rgba(228, 87, 46, 0.18);
+  box-shadow: 0 0 0 4px rgba(255, 91, 31, 0.18);
   animation: live 1.6s ease-in-out infinite;
 }
 
@@ -2226,7 +2227,7 @@ button.row {
 
 @keyframes listen {
   50% {
-    box-shadow: 0 0 0 7px rgba(228, 87, 46, 0.18);
+    box-shadow: 0 0 0 7px rgba(255, 91, 31, 0.18);
   }
 }
 
@@ -2473,7 +2474,7 @@ button.row {
 
 .install-icon {
   border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(22, 18, 14, 0.16);
+  box-shadow: 0 1px 4px rgba(11, 11, 12, 0.16);
   flex: none;
 }
 
@@ -2539,9 +2540,10 @@ button.row {
   color: var(--ink-2);
 }
 
-@media (max-width: 380px) {
+@media (max-width: 1023px) {
   .install-card.desktop {
-    grid-template-columns: 1fr;
+    grid-template-columns: 96px 1fr;
+    align-items: start;
   }
 }
 
@@ -2777,5 +2779,90 @@ button.row {
   .member:hover,
   .row.activity:hover {
     background: var(--surface-2);
+  }
+}
+
+
+/* ---------------------------------------------------------- Geist type */
+/* Headlines are light and tight, numbers thin with quiet cents. Emphasis is
+   a quieter tone, not italics. */
+
+.display {
+  font-weight: 300;
+  letter-spacing: -0.045em;
+  line-height: 1.04;
+}
+
+.display em,
+.greet em {
+  font-style: normal;
+  opacity: 0.55;
+}
+
+.greet {
+  font-weight: 300;
+  letter-spacing: -0.04em;
+}
+
+.brand {
+  font-family: var(--sans);
+  font-size: 19px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.03em !important;
+}
+
+.next-title {
+  font-weight: 300;
+  font-size: 26px;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.letter-text {
+  font-style: normal;
+  font-weight: 300;
+  font-size: 21px;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.form-card h2 {
+  font-weight: 300;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.way strong {
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.pot-row strong,
+.paid-card h3 {
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.welcome-hero .display {
+  font-size: 44px;
+  line-height: 1;
+}
+
+.corridor-hero h1 {
+  font-weight: 300;
+  letter-spacing: -0.045em;
+}
+
+.corridor-hero .arrow {
+  font-size: 0.7em;
+  vertical-align: 0.1em;
+}
+
+@media (min-width: 1024px) {
+  .welcome-hero .display {
+    font-size: 62px;
   }
 }

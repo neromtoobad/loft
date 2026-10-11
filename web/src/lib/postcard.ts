@@ -15,10 +15,10 @@ export type PostcardInput = {
 
 const W = 1200;
 const H = 800;
-const RED = "#e4572e";
+const RED = "#ff5b1f";
 const BLUE = "#24325c";
-const INK = "#16120e";
-const PAPER = "#fbf8f1";
+const INK = "#0b0b0c";
+const PAPER = "#fafaf8";
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -87,7 +87,7 @@ function stamp(ctx: CanvasRenderingContext2D, img: HTMLImageElement | null, x: n
     ctx.restore();
   }
   ctx.fillStyle = INK;
-  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.font = '500 18px "Geist Mono", monospace';
   ctx.textAlign = "center";
   ctx.fillText("LOFT · AIRMAIL", w / 2, h - 20);
   ctx.restore();
@@ -97,8 +97,8 @@ function postmark(ctx: CanvasRenderingContext2D, cx: number, cy: number, top: st
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate((-12 * Math.PI) / 180);
-  ctx.strokeStyle = "rgba(22,18,14,0.55)";
-  ctx.fillStyle = "rgba(22,18,14,0.6)";
+  ctx.strokeStyle = "rgba(11,11,12,0.55)";
+  ctx.fillStyle = "rgba(11,11,12,0.6)";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.arc(0, 0, 74, 0, Math.PI * 2);
@@ -115,7 +115,7 @@ function postmark(ctx: CanvasRenderingContext2D, cx: number, cy: number, top: st
     ctx.stroke();
   }
   ctx.textAlign = "center";
-  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.font = '500 18px "Geist Mono", monospace';
   ctx.fillText(top, 0, -6);
   ctx.fillText(bottom, 0, 22);
   ctx.restore();
@@ -123,10 +123,9 @@ function postmark(ctx: CanvasRenderingContext2D, cx: number, cy: number, top: st
 
 export async function drawPostcard(p: PostcardInput): Promise<Blob> {
   await Promise.all([
-    document.fonts.load('80px "Instrument Serif"'),
-    document.fonts.load('italic 44px "Instrument Serif"'),
-    document.fonts.load('500 18px "IBM Plex Mono"'),
-    document.fonts.load('400 26px "Inter"'),
+    document.fonts.load('300 80px "Geist"'),
+    document.fonts.load('400 26px "Geist"'),
+    document.fonts.load('500 18px "Geist Mono"'),
   ]).catch(() => undefined);
   const img = p.creature ? await loadImage(`/cast/${p.creature}/cheer.webp`) : null;
 
@@ -140,55 +139,55 @@ export async function drawPostcard(p: PostcardInput): Promise<Blob> {
   stripes(ctx, 0, 0, W, H, 22);
 
   // Divider, like the back of a postcard.
-  ctx.strokeStyle = "rgba(22,18,14,0.14)";
+  ctx.strokeStyle = "rgba(11,11,12,0.14)";
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(760, 90);
   ctx.lineTo(760, H - 90);
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(22,18,14,0.55)";
-  ctx.font = '500 20px "IBM Plex Mono", monospace';
+  ctx.fillStyle = "rgba(11,11,12,0.55)";
+  ctx.font = '500 20px "Geist Mono", monospace';
   ctx.textAlign = "left";
   ctx.fillText(`PAR AVION · ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }).toUpperCase()}`, 80, 120);
 
   ctx.fillStyle = INK;
-  ctx.font = '400 150px "Instrument Serif", Georgia, serif';
+  ctx.font = '200 150px "Geist", system-ui, sans-serif';
   ctx.fillText(p.amount, 72, 285);
   if (p.naira) {
-    ctx.fillStyle = "rgba(22,18,14,0.55)";
-    ctx.font = '400 30px "Inter", system-ui, sans-serif';
+    ctx.fillStyle = "rgba(11,11,12,0.55)";
+    ctx.font = '400 30px "Geist", system-ui, sans-serif';
     ctx.fillText(p.naira, 82, 335);
   }
 
   ctx.fillStyle = INK;
-  ctx.font = 'italic 54px "Instrument Serif", Georgia, serif';
+  ctx.font = '300 50px "Geist", system-ui, sans-serif';
   ctx.fillText(`From ${p.from}, to ${p.to}.`, 80, 440);
   if (p.note) {
-    ctx.fillStyle = "rgba(22,18,14,0.75)";
-    ctx.font = 'italic 38px "Instrument Serif", Georgia, serif';
+    ctx.fillStyle = "rgba(11,11,12,0.75)";
+    ctx.font = '300 34px "Geist", system-ui, sans-serif';
     const note = p.note.length > 46 ? `${p.note.slice(0, 45)}…` : p.note;
     ctx.fillText(`“${note}”`, 80, 500);
   }
 
-  ctx.fillStyle = "rgba(22,18,14,0.6)";
-  ctx.font = '400 26px "Inter", system-ui, sans-serif';
+  ctx.fillStyle = "rgba(11,11,12,0.6)";
+  ctx.font = '400 26px "Geist", system-ui, sans-serif';
   ctx.fillText(`Landed in ${p.seconds} on Monad. No fees, no bank.`, 80, 600);
-  ctx.font = '500 18px "IBM Plex Mono", monospace';
+  ctx.font = '500 18px "Geist Mono", monospace';
   ctx.fillText(`TX ${p.hash.slice(0, 10)}…${p.hash.slice(-6)}`, 80, 640);
 
   ctx.fillStyle = INK;
-  ctx.font = '400 40px "Instrument Serif", Georgia, serif';
+  ctx.font = '500 38px "Geist", system-ui, sans-serif';
   ctx.fillText("Loft", 80, 712);
-  ctx.fillStyle = "rgba(22,18,14,0.55)";
-  ctx.font = '400 22px "Inter", system-ui, sans-serif';
+  ctx.fillStyle = "rgba(11,11,12,0.55)";
+  ctx.font = '400 22px "Geist", system-ui, sans-serif';
   ctx.fillText("send dollars home in one tap", 160, 710);
 
   stamp(ctx, img, 900, 100, 210, 250);
   postmark(ctx, 905, 360, "LANDED", p.seconds.toUpperCase());
 
   // Address lines on the right half.
-  ctx.strokeStyle = "rgba(22,18,14,0.18)";
+  ctx.strokeStyle = "rgba(11,11,12,0.18)";
   ctx.lineWidth = 2;
   for (let k = 0; k < 3; k++) {
     ctx.beginPath();
@@ -197,10 +196,10 @@ export async function drawPostcard(p: PostcardInput): Promise<Blob> {
     ctx.stroke();
   }
   ctx.fillStyle = INK;
-  ctx.font = 'italic 44px "Instrument Serif", Georgia, serif';
+  ctx.font = '300 40px "Geist", system-ui, sans-serif';
   ctx.fillText(p.to, 830, 508);
-  ctx.fillStyle = "rgba(22,18,14,0.55)";
-  ctx.font = '400 24px "Inter", system-ui, sans-serif';
+  ctx.fillStyle = "rgba(11,11,12,0.55)";
+  ctx.font = '400 24px "Geist", system-ui, sans-serif';
   ctx.fillText("Home", 830, 578);
 
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("no postcard"))), "image/png"));
