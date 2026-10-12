@@ -6,9 +6,9 @@
 
 Built for [Monad Metropolis](https://monad.xyz/developers/hackathons/metropolis), Track 02: Consumer Products & Payments.
 
-> **Live on Monad mainnet:** https://loft.nerom.site · escrow [`0xc2da029bd912516c2046fc928829f63749e6d275`](https://monadvision.com/address/0xc2da029bd912516c2046fc928829f63749e6d275). Unaudited: use small amounts.
+> **Live on Monad mainnet:** https://loftmonad.xyz · escrow [`0xc2da029bd912516c2046fc928829f63749e6d275`](https://monadvision.com/address/0xc2da029bd912516c2046fc928829f63749e6d275). Unaudited: use small amounts.
 
-**It's a web app.** There's no app store download: open https://loft.nerom.site on a phone and add it to the Home Screen (iPhone: Share → Add to Home Screen; Android: ⋮ → Install app, or the Install button Loft shows). It then opens full-screen like any app, and the same passkey signs in. On a computer, Loft shows a QR code to open it on your phone.
+**It's a web app.** There's no app store download: open https://loftmonad.xyz on a phone and add it to the Home Screen (iPhone: Share → Add to Home Screen; Android: ⋮ → Install app, or the Install button Loft shows). It then opens full-screen like any app, and the same passkey signs in. On a computer, Loft shows a QR code to open it on your phone.
 
 ## The problem
 
