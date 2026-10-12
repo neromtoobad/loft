@@ -13,3 +13,9 @@ art/sheets/cut/
 art/sheets/v2/
 art/sheets/old/
 art/concepts/*.png
+
+# Promo video: render output and the licensed music track stay local.
+submission/promo/out/
+submission/promo/assets/music.mp3
+submission/promo/assets/*16.wav
+submission/promo/*.mp4

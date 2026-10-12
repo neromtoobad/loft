@@ -153,14 +153,19 @@ function FromAnyChain() {
   useEffect(() => {
     setPreview(null);
     if (!session || !source || !(n >= 1) || active) return;
+    // Quotes take a second or two; one for an amount or chain that's since changed must not land.
+    let current = true;
     const t = setTimeout(() => {
       api
         .topupQuote({ source: source.id, amount: n, address: session.account.address, refundTo: refundTo || undefined, dry: true })
-        .then(setPreview)
-        .catch((e) => setError(errorText(e)));
+        .then((q) => current && setPreview(q))
+        .catch((e) => current && setError(errorText(e)));
     }, 400);
     setError(null);
-    return () => clearTimeout(t);
+    return () => {
+      current = false;
+      clearTimeout(t);
+    };
   }, [session, source, n, refundTo, active]);
 
   // Follow the deposit through to Monad.
