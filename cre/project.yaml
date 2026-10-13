@@ -9,8 +9,10 @@ mainnet-settings:
     - chain-name: monad-mainnet
       url: https://rpc.monad.xyz
 
-# The local fork from scripts/local-chain.ts (chain id 10143).
+# The local fork from scripts/local-chain.ts (chain id 10143), reached through
+# scripts/rpc-input-shim.mjs on :8547: the fork reads call data only from
+# `data`, and the CRE simulator sends it as `input`.
 local-settings:
   rpcs:
     - chain-name: monad-testnet
-      url: http://localhost:8545
+      url: http://localhost:8547

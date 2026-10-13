@@ -132,7 +132,8 @@ export const onCron = (runtime: Runtime<Config>): RunResult => {
     throw new Error(`report write failed: ${write.errorMessage || write.txStatus}`);
   }
   const txHash = write.txHash ? bytesToHex(write.txHash) : undefined;
-  runtime.log(`paid ${ids.length} order(s), released ${potIds.length} pot(s)${txHash ? ` in ${txHash}` : ""}`);
+  // The escrow decides per order: one whose rate floor the agreed rate hasn't reached stays due.
+  runtime.log(`reported ${ids.length} due order(s) and ${potIds.length} pot(s) to the escrow${txHash ? ` in ${txHash}` : ""}`);
   return { due: ids.length, pots: potIds.length, ngnPerUsd, txHash };
 };
 
